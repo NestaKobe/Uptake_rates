@@ -2,7 +2,7 @@
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
 ## Created: Faro, 16th April 2021
-## Last modification: 23/04/2021
+## Last modification: 02/05/2021
 
 ## Simon Coburg and Carmen dos Santos
 ## email: simon.vonsachsencoburgundgotha@imbrsea.eu / cbsantos@ualg.pt
@@ -40,19 +40,19 @@ getwd()
 # DATA --------------------------------------------------------------------
 
 # load SOURCES
-data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_23.04.2021.xlsx",
+data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_30.04.2021.xlsx",
                         sheet="sources",na="NA",skip=3)
 str(data.sou)
 names(data.sou)
 
 # load ENVIRONMENTAL
-data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_23.04.2021.xlsx",
+data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_30.04.2021.xlsx",
                         sheet="environmental",na="NA",skip=3)
 str(data.env)
 names(data.env)
 
 # load EXPERIMENTAL
-data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_23.04.2021.xlsx",
+data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_30.04.2021.xlsx",
                         sheet="experimental",na="NA",skip=3)
 str(data.exp)
 names(data.exp)
@@ -86,53 +86,77 @@ data.all <- merge(data.env,data.exp,by="id_short")
 
 ##Publication type
 ggplot(data.sou, aes(x=publication_type)) +
-        geom_bar(stat="count") +
-        theme_bw()
+      geom_bar(stat="count", width=0.5) +
+      ggtitle("Publication types") + 
+      labs(x="Type of publication", y="Number of articles") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
 
 ##Publication year
 ggplot(data.sou, aes(x=year)) +
-        geom_bar(stat="count") +
-        theme_bw()
+      geom_bar(stat="count") +
+      ggtitle("Publication year") + 
+      labs(x="Year of publication", y="Number of articles") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      scale_x_continuous(limits=c(1980, 2021), breaks=seq(1980,2021,5))
+      
 
 ###DATA.ENV
 
 #Sampling country
 ggplot(data.env, aes(x=sample_country)) +
-        geom_bar(stat="count", na.rm=FALSE) + coord_flip() +
-        theme_bw() 
-#       + theme(axis.text.x = element_text(angle=0, vjust=0.5, hjust=1))
+      geom_bar(stat="count", na.rm=FALSE) + coord_flip() +
+      ggtitle("Sample locations by country") + 
+      labs(x="Country", y="Number of sampling locations") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
         
 
 ###DATA.EXP
 
 #Incubation type / surge or int. contr. phase
-ggplot(data.exp, aes(x=Vmax))+
-  geom_histogram(binwidth=10) +
-  facet_grid(type_incub~species_type) +
-  theme_bw()
+ggplot(data.exp, aes(x=type_uptake, fill=type_uptake))+
+      geom_bar(stat="count") +
+      facet_grid(type_incub~species_type) +
+      scale_size_manual(values=c(5))+
+      ggtitle("Surge uptake vs. Internally controlled phase") + 
+      labs(x="Uptake type", y="Number of registered values") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.position = "none")
 
 
 ###Species type
 
 ggplot(data.exp, aes(x=species_type)) +
-        geom_bar(stat="count",  width = .5) +
-        geom_text(aes(label = ..count..), stat = "count", vjust = 1.5, colour = "white") +
-        theme_bw()
+      geom_bar(stat="count",  width = .5) +
+      geom_text(aes(label = ..count..), stat = "count", vjust = 1.5, colour = "white") +
+      ggtitle("Registered values by species type") + 
+      labs(x="Species type", y="Number of registered values") +
+      theme_bw()+
+      theme(plot.title = element_text(hjust = 0.5))
 
   
-ggplot(data.exp, aes(x=species_type, colour=species_compartm, fill=species_compartm)) +
-        geom_bar(stat="count", position=position_dodge()) +
-        #geom_text(aes(label = ..count..), stat = "count", vjust = .5, colour = "black") +
-        theme_bw() +
-        theme(legend.position="bottom")
-
-
 ggplot(data.exp, aes(x=species_type, fill=species_phyla)) +
-        scale_fill_manual(values = c("forestgreen", "salmon4", "red2", "springgreen4")) +
-        geom_bar(stat="count", position=position_dodge(),  width = .6) +
-        #geom_text(aes(label = ..count..), stat = "count", vjust = .5, colour = "black") +
-        theme_bw() +
-        theme(legend.position="bottom")
+      scale_fill_manual(values = c("forestgreen", "salmon4", "red2", "springgreen4")) +
+      geom_bar(stat="count", position=position_dodge(),  width = .6)+
+      ggtitle("Species phyla") + 
+      labs(x="Species type", y="Number of registered values") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5), legend.position="right") +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.85,.8))
+
+
+ggplot(data.exp, aes(x=species_type, colour=species_compartm, fill=species_compartm)) +
+      geom_bar(stat="count", position=position_dodge(), width= .6) +
+      ggtitle("Species compartment") + 
+      labs(x="Species type", y="Number of registered values") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5), legend.position="right") +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.85,.8))
 
 #library(ggpubr)
 #ggarrange(spcomp, spphyl, ncol=2, nrow=1)
@@ -169,13 +193,63 @@ ggplot(data.exp, aes(x=temperature_experiment, y=Vmax)) +
 
 
 #Boxplot + jitter for nutrients
-ggplot(data.exp, aes(x=species_type, y=Vmax)) +
-        geom_boxplot() +
-        geom_jitter() +
-        facet_grid(.~nutrient) +
-        theme_bw()
+r1 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
+            geom_boxplot() +
+            geom_jitter() +
+            facet_grid(.~nutrient) +
+            ggtitle("RANGE Vmax values for nutrients") + 
+            labs(x="Species type", y="Vmax") +
+            theme_bw() +
+            theme(plot.title = element_text(hjust = 0.5))
+
+#Boxplot + jitter for nutrients coloured
+r2 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
+            geom_boxplot(aes(colour = factor(type_uptake))) +
+            geom_jitter(aes(colour = factor(type_uptake))) +
+            facet_grid(.~nutrient) +
+            ggtitle("RANGE Vmax values for nutrients") + 
+            labs(x="Species type", y="Vmax") +
+            theme_bw() +
+            theme(plot.title = element_text(hjust = 0.5)) +
+            theme(legend.title = element_blank()) +
+            theme(legend.position = "bottom")
 
 
+#Scatterplot alpha
+ggplot(data.exp, aes(x=alpha, y=temperature_experiment, colour=species_type)) +
+      geom_point() +
+      facet_grid(.~nutrient) +
+      ggtitle("Alpha values for nutrients") + 
+      labs(x="Alpha", y="Temperature") +
+      scale_y_continuous(limits=c(0, 30), breaks=seq(0,30,5)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = "bottom")
+
+
+ggplot(data.exp, aes(x=alpha, y=temperature_experiment, colour=species_type)) +
+      geom_point() +
+      facet_grid(species_compartm~nutrient) +
+      ggtitle("Alpha values by nutrient & species compartment") + 
+      labs(x="Alpha", y="Temperature") +
+      scale_y_continuous(limits=c(0, 30), breaks=seq(0,30,5)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = "bottom")
+
+
+ggplot(data.exp, aes(x=alpha, y=temperature_experiment, colour=species_type)) +
+  geom_point() +
+  facet_grid(type_uptake~nutrient) +
+  ggtitle("Alpha values by nutrient & uptake types") + 
+  labs(x="Alpha", y="Temperature") +
+  scale_y_continuous(limits=c(0, 30), breaks=seq(0,30,5)) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "bottom")
 
 # Vmax Single -------------------------------------------------------------
 
@@ -214,21 +288,25 @@ ggplot(data.exp, aes(x=temperature_experiment, y=uptake_rate_dw)) +
 
 #Boxplot + jitter for nutrients
 ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
-        geom_boxplot() +
-        geom_jitter() +
-        facet_grid(~nutrient) +
-        theme_bw()
-
-ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
       geom_boxplot() +
       geom_jitter() +
-      facet_grid(type_uptake~nutrient) +
-      theme_bw()
+      facet_grid(.~nutrient) +
+      ggtitle("SINGLE Vmax values for nutrients") + 
+      labs(x="Species type", y="Vmax") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
 
-    #Boxplot + jitter for nutrients coloured
-    ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
-            geom_boxplot(aes(colour = factor(type_uptake))) +
-            geom_jitter(aes(colour = factor(type_uptake))) +
-            facet_grid(.~nutrient) +
-            theme_bw()
+#Boxplot + jitter for nutrients coloured
+ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
+      geom_boxplot(aes(colour = factor(type_uptake))) +
+      geom_jitter(aes(colour = factor(type_uptake))) +
+      facet_grid(.~nutrient) +
+      ggtitle("SINGLE Vmax values for nutrients") + 
+      labs(x="Species type", y="Vmax") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = "bottom")
+        
+        
         
