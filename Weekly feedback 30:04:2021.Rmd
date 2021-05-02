@@ -30,8 +30,10 @@ PRISMA protocol step **Eligibility**
 
 - <u> of studies included in qualitative synthesis: 51 </u>
 
+<br>
 
 ### Exploratory data analysis
+<br>
 ```{r loading libraries, include=FALSE}
 
 # load libraries
@@ -180,7 +182,7 @@ ggplot(data.exp, aes(x=species_type, colour=species_compartm, fill=species_compa
 <br>
 Number of registered values by the type of incubation *Single* or *Range*.
 <br>
-*Note: Majority are single Vmax values extracted from articles missing values for* Km *and* alpha
+*Note: Majority are single Vmax values extracted from articles which are missing values for* Km *and* alpha
 
 ```{r incubation type, echo=FALSE, warning=FALSE}
 #Incubation type / surge or int. contr. phase
@@ -196,7 +198,7 @@ ggplot(data.exp, aes(x=type_uptake, fill=type_uptake))+
 ```
 <br>
 
-### Alpha values
+#### Alpha values
 <br>
 Values for alpha portrayed by *nutrients*, *nutrients* & *species compartment* and *nutrients* & *uptake types*
 <br>
@@ -240,7 +242,7 @@ ggplot(data.exp, aes(x=alpha, y=temperature_experiment, colour=species_type)) +
 
 #### Vmax values
 <br>
-Values for Vmax portrayed for registered *Range* and *Single* values by *nutrients*
+Values of Vmax portrayed for registered *Range* and *Single* values by *nutrients*
 <br>
 
 ```{r nutrient, echo=FALSE, warning=FALSE}
