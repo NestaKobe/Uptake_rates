@@ -187,14 +187,14 @@ Number of registered values by the type of incubation *Single* or *Range*.
 ```{r incubation type, echo=FALSE, warning=FALSE}
 #Incubation type / surge or int. contr. phase
 ggplot(data.exp, aes(x=type_uptake, fill=type_uptake))+
-  geom_bar(stat="count") +
-  facet_grid(type_incub~species_type) +
-  scale_size_manual(values=c(5))+
-  ggtitle("Surge uptake vs. Internally controlled phase") + 
-  labs(x="Uptake type", y="Number of registered values") +
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  theme(legend.position = "none")
+      geom_bar(stat="count") +
+      facet_grid(type_incub~species_type) +
+      scale_size_manual(values=c(5))+
+      ggtitle("Surge uptake vs. Internally controlled phase") + 
+      labs(x="Uptake type", y="Number of registered values") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.position = "none")
 ```
 <br>
 
@@ -229,15 +229,15 @@ ggplot(data.exp, aes(x=alpha, y=temperature_experiment, colour=species_type)) +
 
 
 ggplot(data.exp, aes(x=alpha, y=temperature_experiment, colour=species_type)) +
-  geom_point() +
-  facet_grid(type_uptake~nutrient) +
-  ggtitle("Alpha values by nutrient & uptake type") + 
-  labs(x="Alpha", y="Temperature [ºC]") +
-  scale_y_continuous(limits=c(0, 30), breaks=seq(0,30,5)) +
-  theme_bw() +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  theme(legend.title = element_blank()) +
-  theme(legend.position = "bottom")
+      geom_point() +
+      facet_grid(type_uptake~nutrient) +
+      ggtitle("Alpha values by nutrient & uptake type") + 
+      labs(x="Alpha", y="Temperature [ºC]") +
+      scale_y_continuous(limits=c(0, 30), breaks=seq(0,30,5)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = "bottom")
 ```
 
 #### Vmax values
@@ -248,8 +248,8 @@ Values of Vmax portrayed for registered *Range* and *Single* values by *nutrient
 ```{r nutrient, echo=FALSE, warning=FALSE}
 #RANGE Boxplot + jitter for nutrients
 r1 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
-            geom_boxplot() +
-            geom_jitter() +
+            geom_boxplot(outlier.shape=NA) +
+            geom_jitter(width=0.3, shape=21) +
             facet_grid(.~nutrient) +
             ggtitle("RANGE") + 
             labs(x="", y="") +
@@ -259,8 +259,8 @@ r1 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
 
 #Boxplot + jitter for nutrients coloured
 r2 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
-            geom_boxplot(aes(colour = factor(type_uptake))) +
-            geom_jitter(aes(colour = factor(type_uptake))) +
+            ggeom_boxplot(aes(colour = factor(type_uptake)),outlier.shape = NA) +
+            geom_jitter(aes(colour = factor(type_uptake)), width=0.3, shape=21) +
             facet_grid(.~nutrient) +
             ggtitle("RANGE") + 
             labs(x="", y="") +
@@ -273,8 +273,8 @@ r2 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
 
 #SINGLE Boxplot + jitter for nutrients
 s1 <- ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
-            geom_boxplot() +
-            geom_jitter() +
+            geom_boxplot(outlier.shape=NA) +
+            geom_jitter(width=0.3, shape=21) +
             facet_grid(.~nutrient) +
             ggtitle("SINGLE") +
             labs(x="", y="") +
@@ -284,8 +284,8 @@ s1 <- ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
 
 #SI|NGLE Boxplot + jitter for nutrients coloured
 s2 <- ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
-            geom_boxplot(aes(colour = factor(type_uptake))) +
-            geom_jitter(aes(colour = factor(type_uptake))) +
+            geom_boxplot(aes(colour = factor(type_uptake)),outlier.shape = NA) +
+            geom_jitter(aes(colour = factor(type_uptake)), width=0.3, shape=21) +
             facet_grid(.~nutrient) +
             ggtitle("SINGLE") + 
             labs(x="", y="") +

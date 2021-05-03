@@ -105,12 +105,21 @@ ggplot(data.sou, aes(x=year)) +
 ###DATA.ENV
 
 #Sampling country
-ggplot(data.env, aes(x=sample_country)) +
-      geom_bar(stat="count", na.rm=FALSE) + coord_flip() +
-      ggtitle("Sample locations by country") + 
-      labs(x="Country", y="Number of sampling locations") +
-      theme_bw() +
-      theme(plot.title = element_text(hjust = 0.5))
+#gexp <- unique(data.exp[,c("id_short", "species_type")])
+genv <- unique(data.env[,c("id_short", "sample_country")]) # create data for ggplot - 
+
+#using the unique function with study_id and sample_country you eliminate repeated countries within the same study
+gdata <- data.frame(table(genv$sample_country)) # this is to create a frequency table for countries
+names(gdata) <- c("sample_country","n")
+
+ggplot(gdata, aes(x=reorder(sample_country,n), y=n)) +   # here I have added "reorder" so in the plot you can see countries ordered by frequency
+  geom_bar(stat="identity", na.rm=FALSE) + 
+  coord_flip() +
+  scale_x_discrete("Country") +
+  scale_y_continuous("Number of studies") +
+  theme_bw() 
+
+rm(gdata, genv, gexp) # delete gdata
         
 
 ###DATA.EXP
@@ -194,8 +203,8 @@ ggplot(data.exp, aes(x=temperature_experiment, y=Vmax)) +
 
 #Boxplot + jitter for nutrients
 r1 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
-            geom_boxplot() +
-            geom_jitter() +
+            geom_boxplot(outlier.shape=NA) +
+            geom_jitter(width=0.3, shape=21) +
             facet_grid(.~nutrient) +
             ggtitle("RANGE Vmax values for nutrients") + 
             labs(x="Species type", y="Vmax") +
@@ -204,8 +213,8 @@ r1 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
 
 #Boxplot + jitter for nutrients coloured
 r2 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
-            geom_boxplot(aes(colour = factor(type_uptake))) +
-            geom_jitter(aes(colour = factor(type_uptake))) +
+            geom_boxplot(aes(colour = factor(type_uptake)),outlier.shape = NA) +
+            geom_jitter(aes(colour = factor(type_uptake)), width=0.3, shape=21) +
             facet_grid(.~nutrient) +
             ggtitle("RANGE Vmax values for nutrients") + 
             labs(x="Species type", y="Vmax") +
@@ -288,8 +297,8 @@ ggplot(data.exp, aes(x=temperature_experiment, y=uptake_rate_dw)) +
 
 #Boxplot + jitter for nutrients
 ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
-      geom_boxplot() +
-      geom_jitter() +
+      geom_boxplot(outlier.shape=NA) +
+      geom_jitter(width=0.3, shape=21) +
       facet_grid(.~nutrient) +
       ggtitle("SINGLE Vmax values for nutrients") + 
       labs(x="Species type", y="Vmax") +
@@ -298,8 +307,8 @@ ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
 
 #Boxplot + jitter for nutrients coloured
 ggplot(data.exp, aes(x=species_type, y=uptake_rate_dw)) +
-      geom_boxplot(aes(colour = factor(type_uptake))) +
-      geom_jitter(aes(colour = factor(type_uptake))) +
+      geom_boxplot(aes(colour = factor(type_uptake)),outlier.shape = NA) +
+      geom_jitter(aes(colour = factor(type_uptake)), width=0.3, shape=21) +
       facet_grid(.~nutrient) +
       ggtitle("SINGLE Vmax values for nutrients") + 
       labs(x="Species type", y="Vmax") +
