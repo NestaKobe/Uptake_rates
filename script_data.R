@@ -2,7 +2,7 @@
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
 ## Created: Faro, 16th April 2021
-## Last modification: 02/05/2021
+## Last modification: 07/05/2021
 
 ## Simon Coburg and Carmen dos Santos
 ## email: simon.vonsachsencoburgundgotha@imbrsea.eu / cbsantos@ualg.pt
@@ -40,19 +40,19 @@ getwd()
 # DATA --------------------------------------------------------------------
 
 # load SOURCES
-data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_30.04.2021.xlsx",
+data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_07.05.2021.xlsx",
                         sheet="sources",na="NA",skip=3)
 str(data.sou)
 names(data.sou)
 
 # load ENVIRONMENTAL
-data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_30.04.2021.xlsx",
+data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_07.05.2021.xlsx",
                         sheet="environmental",na="NA",skip=3)
 str(data.env)
 names(data.env)
 
 # load EXPERIMENTAL
-data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_30.04.2021.xlsx",
+data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_07.05.2021.xlsx",
                         sheet="experimental",na="NA",skip=3)
 str(data.exp)
 names(data.exp)
@@ -113,11 +113,11 @@ gdata <- data.frame(table(genv$sample_country)) # this is to create a frequency 
 names(gdata) <- c("sample_country","n")
 
 ggplot(gdata, aes(x=reorder(sample_country,n), y=n)) +   # here I have added "reorder" so in the plot you can see countries ordered by frequency
-  geom_bar(stat="identity", na.rm=FALSE) + 
-  coord_flip() +
-  scale_x_discrete("Country") +
-  scale_y_continuous("Number of studies") +
-  theme_bw() 
+      geom_bar(stat="identity", na.rm=FALSE) + 
+      coord_flip() +
+      scale_x_discrete("Country") +
+      scale_y_continuous("Number of studies") +
+      theme_bw() 
 
 rm(gdata, genv, gexp) # delete gdata
         
@@ -173,35 +173,144 @@ ggplot(data.exp, aes(x=species_type, colour=species_compartm, fill=species_compa
 
 # Vmax Range -------------------------------------------------------------------
 
-#Distribution - Hist
+#Distribution of recorded values - Histogram
+
+#Vmax Range
 ggplot(data.exp, aes(x=Vmax))+
-        geom_histogram(binwidth=10) +
-        facet_grid(.~species_type) +
-        theme_bw()
+      geom_histogram(binwidth=10, 
+                     breaks = seq(0, 500, by = 10), 
+                     colour = "black", 
+                     fill = "white") +
+      geom_rug() +
+      geom_density(aes(y=..density..*750), colour="blue") +
+      scale_x_continuous(limits=c(0, 500)) +
+      scale_y_continuous(limits=c(0, 50)) +
+      facet_grid(.~species_type) +
+      ggtitle("Vmax values (Range)") + 
+      labs(x="Vmax", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+
+#Vmax Single
+ggplot(data.exp, aes(x=uptake_rate_dw))+
+      geom_histogram(binwidth=10, 
+                     breaks = seq(-100, 450, by = 15), 
+                     colour = "black", 
+                     fill = "white") +
+      geom_rug() +
+      geom_density(aes(y=..density..*1000), colour="blue") +
+      scale_x_continuous(limits=c(-100, 500)) +
+      scale_y_continuous(limits=c(0, 400)) +
+      facet_grid(.~species_type) +
+      ggtitle("Vmax values (Single)") + 
+      labs(x="Vmax", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+
+#Alpha Range
+ggplot(data.exp, aes(x=alpha))+
+      geom_histogram(binwidth=0.1, 
+                     breaks = seq(0, 15, by = 0.2), 
+                     colour = "black", 
+                     fill = "white") +
+      geom_rug() +
+      geom_density(aes(y=..density..*10), colour="blue") +
+      scale_x_continuous(limits=c(0, 15)) +
+      scale_y_continuous(limits=c(0, 20)) +
+      facet_grid(.~species_type) +
+      ggtitle("Alpha values (Range)") + 
+      labs(x="Alpha", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+
+##Overlapping densities
+#Vmax Range
+ggplot(data.exp, aes(x=Vmax, group=species_type, fill=species_type))+
+      geom_density(alpha=0.4) +
+      ggtitle("RANGE Vmax values") + 
+      labs(x="Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.9,.9))
+
+      #Log transformation
+      ggplot(data.exp, aes(x=Vmax, group=species_type, fill=species_type))+
+            geom_density(alpha=0.5) +
+            scale_x_log10() +
+            ggtitle("Log10 Vmax values (Range)") + 
+            labs(x="(log) Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+            theme_bw() +
+            theme(plot.title = element_text(hjust = 0.5)) +
+            theme(legend.title = element_blank()) +
+            theme(legend.position = c(.9,.9))
+            
+#Vmax Single
+ggplot(data.exp, aes(x=uptake_rate_dw, group=species_type, fill=species_type))+
+      geom_density(alpha=0.5) +
+      ggtitle("Vmax values (Single)") +
+      labs(x="Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.9,.9))
+
+      #Log transformed
+      ggplot(data.exp, aes(x=uptake_rate_dw, group=species_type, fill=species_type))+
+            geom_density(alpha=0.5) +
+            scale_x_log10() +
+            ggtitle("Log10 Vmax values (Single)") +
+            labs(x="(log) Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+            theme_bw() +
+            theme(plot.title = element_text(hjust = 0.5))
 
 
-#Vmax for species compartment
+
+#Vmax alpha
+ggplot(data.exp, aes(x=alpha, group=species_type, fill=species_type))+
+      geom_density(alpha=0.4) +
+      ggtitle("Alpha values (Range)") + 
+      labs(x="Alpha [l g^-1 dw h^-1 µM^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.9,.9))
+
+
+      #Log transformation
+      ggplot(data.exp, aes(x=alpha, group=species_type, fill=species_type))+
+            geom_density(alpha=0.4) +
+            scale_x_log10() +
+            ggtitle("Alpha values (Range)") + 
+            labs(x="(log) Alpha [l g^-1 dw h^-1 µM^-1]", y="Frequency") +
+            theme_bw() +
+            theme(plot.title = element_text(hjust = 0.5)) +
+            theme(legend.title = element_blank()) +
+            theme(legend.position = c(.9,.9))
+
+      
+##Vmax for species compartment
 ggplot(data.exp, aes(x=Vmax))+
   geom_histogram(binwidth=10) +
   facet_grid(species_compartm~species_type) +
   theme_bw()
 
 
-#Vmax for int. contr. phase / surge
+##Vmax for int. contr. phase / surge
 ggplot(data=subset(data.exp, !is.na(Vmax)), aes(x=Vmax), fill=type_uptake)+
   geom_histogram(binwidth=10) +
   facet_grid(type_uptake~species_type) +
   theme_bw()
 
 
-#Scatterplot for temperature
+##Scatterplot for temperature
 ggplot(data.exp, aes(x=temperature_experiment, y=Vmax)) +
   geom_point() +
   facet_grid(.~species_type) +
   theme_bw()
 
 
-#Boxplot + jitter for nutrients
+##Boxplot + jitter for nutrients
 r1 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
             geom_boxplot(outlier.shape=NA) +
             geom_jitter(width=0.3, shape=21) +
@@ -211,7 +320,7 @@ r1 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
             theme_bw() +
             theme(plot.title = element_text(hjust = 0.5))
 
-#Boxplot + jitter for nutrients coloured
+##Boxplot + jitter for nutrients coloured
 r2 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
             geom_boxplot(aes(colour = factor(type_uptake)),outlier.shape = NA) +
             geom_jitter(aes(colour = factor(type_uptake)), width=0.3, shape=21) +
@@ -224,7 +333,7 @@ r2 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
             theme(legend.position = "bottom")
 
 
-#Scatterplot alpha
+##Scatterplot alpha
 ggplot(data.exp, aes(x=alpha, y=temperature_experiment, colour=species_type)) +
       geom_point() +
       facet_grid(.~nutrient) +
