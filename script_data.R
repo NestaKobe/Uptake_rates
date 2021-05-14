@@ -2,7 +2,7 @@
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
 ## Created: Faro, 16th April 2021
-## Last modification: 07/05/2021
+## Last modification: 14/05/2021
 
 ## Simon Coburg and Carmen dos Santos
 ## email: simon.vonsachsencoburgundgotha@imbrsea.eu / cbsantos@ualg.pt
@@ -117,7 +117,8 @@ ggplot(gdata, aes(x=reorder(sample_country,n), y=n)) +   # here I have added "re
       coord_flip() +
       scale_x_discrete("Country") +
       scale_y_continuous("Number of studies") +
-      theme_bw() 
+      theme_bw() +
+      
 
 rm(gdata, genv, gexp) # delete gdata
         
