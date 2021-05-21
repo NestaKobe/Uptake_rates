@@ -2,7 +2,7 @@
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
 ## Created: Faro, 16th April 2021
-## Last modification: 14/05/2021
+## Last modification: 20/05/2021
 
 ## Simon Coburg and Carmen dos Santos
 ## email: simon.vonsachsencoburgundgotha@imbrsea.eu / cbsantos@ualg.pt
@@ -40,19 +40,19 @@ getwd()
 # DATA --------------------------------------------------------------------
 
 # load SOURCES
-data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_07.05.2021.xlsx",
+data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_21.05.2021.xlsx",
                         sheet="sources",na="NA",skip=3)
 str(data.sou)
 names(data.sou)
 
 # load ENVIRONMENTAL
-data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_07.05.2021.xlsx",
+data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_21.05.2021.xlsx",
                         sheet="environmental",na="NA",skip=3)
 str(data.env)
 names(data.env)
 
 # load EXPERIMENTAL
-data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_07.05.2021.xlsx",
+data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_21.05.2021.xlsx",
                         sheet="experimental",na="NA",skip=3)
 str(data.exp)
 names(data.exp)
@@ -75,16 +75,19 @@ length(unique(data.exp$id_short))
 #capture.output(x, file = "env.csv")
 #capture.output(y, file = "exp.csv")
 
-# MERGE data.exp and data.env
-data.all <- merge(data.env,data.exp,by="id_short")
+# MERGE spreadsheets
+data.ee <- merge(data.env,data.exp,by="id_short")
+data.all <- merge(data.sou, data.ee, by="study_id")
 
-
+#Filter for RANGE only
+data.range <- data.all[data.all$type_incub == "Range",]
 
 # EXPLORATORY -------------------------------------------------------------
 
 ###DATA.SOU
 
 ##Publication type
+
 ggplot(data.sou, aes(x=publication_type)) +
       geom_bar(stat="count", width=0.5) +
       ggtitle("Publication types") + 
@@ -92,21 +95,44 @@ ggplot(data.sou, aes(x=publication_type)) +
       theme_bw() +
       theme(plot.title = element_text(hjust = 0.5))
 
+
 ##Publication year
-ggplot(data.sou, aes(x=year)) +
+
+genv <- unique(data.range[,c("study_id", "year")]) # create data for ggplot
+
+#using the unique function with study_id and year you eliminate repeated countries within the same study
+gdata <- data.frame(table(genv$year)) # this is to create a frequency table by year
+names(gdata) <- c("year","n")
+str(gdata)
+
+gdata$year <- as.numeric(gdata$year)
+
+sum(gdata$n)
+
+ggplot(gdata, aes(x=year, y=n)) +
+      geom_bar(stat="identity", na.rm=FALSE) +
+      scale_x_continuous() +
+      ggtitle("Publication year") + 
+      labs(x="Year of publication", y="Number of articles") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+      
+rm(gdata, genv) # delete gdata
+
+ggplot(data.range, aes(x=year)) +
       geom_bar(stat="count") +
       ggtitle("Publication year") + 
       labs(x="Year of publication", y="Number of articles") +
       theme_bw() +
       theme(plot.title = element_text(hjust = 0.5)) +
       scale_x_continuous(limits=c(1980, 2021), breaks=seq(1980,2021,5))
-      
+
 
 ###DATA.ENV
 
 #Sampling country
-#gexp <- unique(data.exp[,c("id_short", "species_type")])
-genv <- unique(data.env[,c("id_short", "sample_country")]) # create data for ggplot - 
+
+genv <- unique(data.range[,c("study_id", "sample_country")]) # create data for ggplot - 
 
 #using the unique function with study_id and sample_country you eliminate repeated countries within the same study
 gdata <- data.frame(table(genv$sample_country)) # this is to create a frequency table for countries
@@ -120,12 +146,13 @@ ggplot(gdata, aes(x=reorder(sample_country,n), y=n)) +   # here I have added "re
       theme_bw() +
       
 
-rm(gdata, genv, gexp) # delete gdata
+rm(gdata, genv) # delete gdata
         
 
 ###DATA.EXP
 
 #Incubation type / surge or int. contr. phase
+
 ggplot(data.exp, aes(x=type_uptake, fill=type_uptake))+
       geom_bar(stat="count") +
       facet_grid(type_incub~species_type) +
@@ -139,7 +166,7 @@ ggplot(data.exp, aes(x=type_uptake, fill=type_uptake))+
 
 ###Species type
 
-ggplot(data.exp, aes(x=species_type)) +
+ggplot(data.range, aes(x=species_type)) +
       geom_bar(stat="count",  width = .5) +
       geom_text(aes(label = ..count..), stat = "count", vjust = 1.5, colour = "white") +
       ggtitle("Registered values by species type") + 
@@ -148,28 +175,103 @@ ggplot(data.exp, aes(x=species_type)) +
       theme(plot.title = element_text(hjust = 0.5))
 
   
-ggplot(data.exp, aes(x=species_type, fill=species_phyla)) +
+ggplot(data.range, aes(x=species_type, fill=species_phyla)) +
       scale_fill_manual(values = c("forestgreen", "salmon4", "red2", "springgreen4")) +
       geom_bar(stat="count", position=position_dodge(),  width = .6)+
-      ggtitle("Species phyla") + 
+      ggtitle("Registered values by species phyla") + 
       labs(x="Species type", y="Number of registered values") +
+      scale_y_continuous(limits = c(0, 120), breaks = seq(0, 120, by = 20)) +
       theme_bw() +
       theme(plot.title = element_text(hjust = 0.5), legend.position="right") +
       theme(legend.title = element_blank()) +
       theme(legend.position = c(.85,.8))
 
 
-ggplot(data.exp, aes(x=species_type, colour=species_compartm, fill=species_compartm)) +
+ggplot(data.range, aes(x=species_phyla, colour=species_compartm, fill=species_compartm)) +
       geom_bar(stat="count", position=position_dodge(), width= .6) +
-      ggtitle("Species compartment") + 
-      labs(x="Species type", y="Number of registered values") +
+      ggtitle("Registered values by species compartment for phyla") + 
+      labs(x="", y="Number of registered values") +
+      scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 20)) +
+      facet_grid(species_type~.) +
       theme_bw() +
-      theme(plot.title = element_text(hjust = 0.5), legend.position="right") +
-      theme(legend.title = element_blank()) +
-      theme(legend.position = c(.85,.8))
+      theme(plot.title = element_text(hjust = 0.5), legend.position="bottom") +
+      theme(legend.title = element_blank())
 
 #library(ggpubr)
 #ggarrange(spcomp, spphyl, ncol=2, nrow=1)
+
+
+
+# Alpha -------------------------------------------------------------------
+
+ggplot(data.range, aes(x=alpha))+
+      geom_histogram(binwidth=0.1, 
+                     breaks = seq(0, 15, by = 0.2), 
+                     colour = "black", 
+                     fill = "white") +
+      geom_rug() +
+      geom_density(aes(y=..density..*10), colour="blue") +
+      scale_x_continuous(limits=c(0, 15)) +
+      scale_y_continuous(limits=c(0, 20)) +
+      facet_grid(type_uptake~species_type) +
+      ggtitle("Alpha values") + 
+      labs(x="Alpha [l g^-1 dw h^-1 µM^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+
+#Overlapping densities
+ggplot(data.range, aes(x=alpha, group=species_type, fill=species_type))+
+      geom_density(alpha=0.4) +
+      facet_grid(.~type_uptake) +
+      ggtitle("Alpha Algae vs Seagrass") + 
+      labs(x="Alpha [l g^-1 dw h^-1 µM^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.9,.88))
+
+# Vmax --------------------------------------------------------------------
+
+ggplot(data.range, aes(x=Vmax))+
+      geom_histogram(binwidth=0.1, 
+                     breaks = seq(0, 15, by = 0.2), 
+                     colour = "black", 
+                     fill = "white") +
+      geom_rug() +
+      geom_density(aes(y=..density..*10), colour="blue") +
+      scale_x_continuous(limits=c(0, 20)) +
+      scale_y_continuous(limits=c(0, 10)) +
+      facet_grid(type_uptake~species_type) +
+      ggtitle("Vmax values") + 
+      labs(x="Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+
+#Overlapping densities
+ggplot(data.range, aes(x=Vmax, group=species_type, fill=species_type))+
+      geom_density(alpha=0.4) +
+      scale_x_continuous(limits=c(0,200)) +
+      facet_grid(.~type_uptake) +
+      ggtitle("Vmax Algae vs Seagrass") + 
+      labs(x="Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.9,.88))
+
+#Log transformation
+ggplot(data.range, aes(x=Vmax, group=species_type, fill=species_type))+
+      geom_density(alpha=0.5) +
+      scale_x_log10() +
+      facet_grid(.~type_uptake) +
+      ggtitle("Log10 Vmax values (Range)") + 
+      labs(x="(log) Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.9,.9))
+
+
 
 
 # Vmax Range -------------------------------------------------------------------
@@ -209,7 +311,7 @@ ggplot(data.exp, aes(x=uptake_rate_dw))+
       theme(plot.title = element_text(hjust = 0.5))
 
 #Alpha Range
-ggplot(data.exp, aes(x=alpha))+
+ggplot(data.range, aes(x=alpha))+
       geom_histogram(binwidth=0.1, 
                      breaks = seq(0, 15, by = 0.2), 
                      colour = "black", 
@@ -218,8 +320,8 @@ ggplot(data.exp, aes(x=alpha))+
       geom_density(aes(y=..density..*10), colour="blue") +
       scale_x_continuous(limits=c(0, 15)) +
       scale_y_continuous(limits=c(0, 20)) +
-      facet_grid(.~species_type) +
-      ggtitle("Alpha values (Range)") + 
+      facet_grid(type_uptake~species_type) +
+      ggtitle("Alpha values") + 
       labs(x="Alpha", y="Frequency") +
       theme_bw() +
       theme(plot.title = element_text(hjust = 0.5))
@@ -292,23 +394,23 @@ ggplot(data.exp, aes(x=alpha, group=species_type, fill=species_type))+
       
 ##Vmax for species compartment
 ggplot(data.exp, aes(x=Vmax))+
-  geom_histogram(binwidth=10) +
-  facet_grid(species_compartm~species_type) +
-  theme_bw()
+      geom_histogram(binwidth=10) +
+      facet_grid(species_compartm~species_type) +
+      theme_bw()
 
 
 ##Vmax for int. contr. phase / surge
 ggplot(data=subset(data.exp, !is.na(Vmax)), aes(x=Vmax), fill=type_uptake)+
-  geom_histogram(binwidth=10) +
-  facet_grid(type_uptake~species_type) +
-  theme_bw()
+      geom_histogram(binwidth=10) +
+      facet_grid(type_uptake~species_type) +
+      theme_bw()
 
 
 ##Scatterplot for temperature
 ggplot(data.exp, aes(x=temperature_experiment, y=Vmax)) +
-  geom_point() +
-  facet_grid(.~species_type) +
-  theme_bw()
+      geom_point() +
+      facet_grid(.~species_type) +
+      theme_bw()
 
 
 ##Boxplot + jitter for nutrients
@@ -334,7 +436,7 @@ r2 <- ggplot(data.exp, aes(x=species_type, y=Vmax)) +
             theme(legend.position = "bottom")
 
 
-##Scatterplot alpha
+##Scatterplot alpha for nutrients
 ggplot(data.exp, aes(x=alpha, y=temperature_experiment, colour=species_type)) +
       geom_point() +
       facet_grid(.~nutrient) +
@@ -369,6 +471,8 @@ ggplot(data.exp, aes(x=alpha, y=temperature_experiment, colour=species_type)) +
   theme(plot.title = element_text(hjust = 0.5)) +
   theme(legend.title = element_blank()) +
   theme(legend.position = "bottom")
+
+
 
 # Vmax Single -------------------------------------------------------------
 
