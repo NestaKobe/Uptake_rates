@@ -1,0 +1,460 @@
+---
+title: "Weekly feeback"
+author: "Simon Coburg; IMBRSea 20191199 - CCMAR a73216"
+date: "11/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Thesis "Seagrass domination over seaweeds in oligotrophic coastal ecosystems"
+
+<font size="3"> with supervisors: *[Ana Alexandre](https://www.ccmar.ualg.pt/users/aalexandre), [Carmen de los Santos](https://www.ccmar.ualg.pt/users/cbsantos) & [Rui Santos](https://www.ccmar.ualg.pt/users/rosantos), CCMAR* </font>
+
+---
+
+*R script - [GitHub](https://github.com/NestaKobe/Uptake_rates)*
+
+---
+
+PRISMA protocol step **Eligibility**
+
+*of full-text articles assessed for eligibility:* 345
+
+- total studies assessed at present: 345
+
+- of full-text articles excluded with reasons: 31
+
+- of full-text articles on waiting list: 33   
+
+- <u> of studies included in qualitative synthesis: 88 </u>
+
+<br>
+
+### Exploratory data analysis
+<br>
+```{r loading libraries, include=FALSE}
+
+# load libraries
+packages <- c("tidyverse",      # for data science (general) - includes ggplot2
+              "readxl",         # for reading xlsx files
+              "devtools",
+              "ggpubr")
+
+for (i in seq_along(packages)) {
+  if(!do.call(require, list(package = packages[i]))) {
+    do.call(install.packages, list(pkgs = packages[i]))
+    do.call(require, list(package = packages[i]))
+  }
+}
+
+# set working directory
+setwd("~/Documents/IMBRSea/Thesis S4/Rstudio Uptake rates")
+```
+
+```{r loading data, include=FALSE}
+
+# load SOURCES
+data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_04.06.2021.xlsx",
+                        sheet="sources",na="NA",skip=3)
+
+str(data.sou)
+names(data.sou)
+
+# load ENVIRONMENTAL
+data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_04.06.2021.xlsx",
+                        sheet="environmental",na="NA",skip=3)
+str(data.env)
+names(data.env)
+
+# load EXPERIMENTAL
+data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_04.06.2021.xlsx",
+                        sheet="experimental",na="NA",skip=3)
+str(data.exp)
+names(data.exp)
+```
+
+```{r converting numeric, warning=FALSE, include=FALSE}
+
+data.exp$Vmax   <- as.numeric(data.exp$Vmax)
+data.exp$Km     <- as.numeric(data.exp$Km)
+data.exp$alpha  <- as.numeric(data.exp$alpha)
+data.exp$sampling_inter <- as.numeric(data.exp$sampling_inter)
+
+```
+
+```{r combining, waring=FALSE, include=FALSE}
+# MERGE spreadsheets
+data.ee <- merge(data.env,data.exp,by="id_short")
+data.all <- merge(data.ee, data.sou, by="study_id")
+
+#Filter for RANGE only
+data.range <- data.all[data.all$type_incub == "Range",]
+```
+
+**Quality controls for ENVIRONMENTAL/EXPERIMENTAL**
+<br>
+Comparison between spreadsheets *environmental* and *experimental* whether <u> unique_id </u>
+coincide.
+```{r}
+length(unique(data.env$id_short))
+length(unique(data.exp$id_short))
+```
+<br>
+
+### Dataset
+<br>
+Number of articles registered for *Vmax*, *Km* and *alpha* values up to date:
+<br>
+*PRISMA protocol step Eligibility - <u>of studies includes in qualitative synthesis</u>*
+```{r sum sampling location, echo=FALSE, warning=FALSE}
+genv <- unique(data.range[,c("study_id", "year")]) # create data for ggplot - 
+
+#using the unique function with study_id and year you eliminate repeated countries within the same study
+gdata <- data.frame(table(genv$year)) # this is to create a frequency table by year
+names(gdata) <- c("year","n")
+
+sum(gdata$n)
+
+rm(gdata, genv) # delete gdata
+
+```
+<br>
+
+**Publication year**
+<br>
+Peer-reviewed publications assessed by year up to date:
+<br>
+
+
+```{r publication year, echo=FALSE, warning=FALSE}
+genv <- unique(data.range[,c("study_id", "year")]) # create data for ggplot - 
+
+#using the unique function with study_id and year you eliminate repeated countries within the same study
+gdata <- data.frame(table(genv$year)) # this is to create a frequency table by year
+names(gdata) <- c("year","n")
+gdata$year <- as.numeric(as.character(gdata$year))
+
+ggplot(gdata, aes(x=year, y=n)) +
+      geom_bar(stat="identity", na.rm=FALSE) +
+      ggtitle("Publication year") + 
+      labs(x="Year of publication", y="Number of articles") +
+      scale_x_continuous(limits=c(1975, 2021), breaks=seq(1975,2021,5)) +
+      scale_y_continuous(limits=c(0,8), breaks=seq(0,8,2)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(axis.text.x = element_text(angle = 0))
+      
+rm(gdata, genv) # delete gdata
+```
+<br>
+<br>
+
+**Sampling locations**
+<br>
+Amount of peer-reveiwed articles' sampling countries up to date:
+<br>
+
+```{r sampling location, echo=FALSE, warning=FALSE}
+genv <- unique(data.range[,c("study_id", "sample_country")]) # create data for ggplot - 
+
+#using the unique function with study_id and sample_country you eliminate repeated countries within the same study
+gdata <- data.frame(table(genv$sample_country)) # this is to create a frequency table for countries
+names(gdata) <- c("sample_country","n")
+
+ggplot(gdata, aes(x=reorder(sample_country,n), y=n)) +   # here I have added "reorder" so in the plot you can see countries ordered by frequency
+      geom_bar(stat="identity", na.rm=FALSE) + 
+      coord_flip() +
+      scale_x_discrete("Country") +
+      scale_y_continuous("Number of studies", limits = c(0, 25), breaks = seq(0, 25, by = 5)) +
+      ##adjust scale, if numbers higher than limits set --> excluded from plot
+      theme_bw()
+      
+rm(gdata, genv) # delete gdata
+```
+<br>
+<br>
+
+**Species type**
+<br>
+Registered values portrayed by species types *Algae* and *Seagrasses*, by *phyla* and the species *compartments*:
+
+```{r species type, echo=FALSE}
+ggplot(data.range, aes(x=species_type)) +
+      geom_bar(stat="count",  width = .5) +
+      geom_text(aes(label = ..count..), stat = "count", vjust = 1.5, colour = "white") +
+      ggtitle("Registered values by species type") + 
+      labs(x="Species type", y="Number of registered values") +
+      theme_bw()+
+      theme(plot.title = element_text(hjust = 0.5))
+```
+<br>
+<br>
+
+```{r species phyla, echo=FALSE}
+  
+ggplot(data.range, aes(x=species_type, fill=species_phyla)) +
+      scale_fill_manual(values = c("forestgreen", "salmon4", "red2", "springgreen4")) +
+      geom_bar(stat="count", position=position_dodge(),  width = .6)+
+      ggtitle("Registered values by species phyla") + 
+      labs(x="Species type", y="Number of registered values") +
+      scale_y_continuous(limits = c(0, 350), breaks = seq(0, 350, by =50)) + 
+      #adjust scale, if numbers higher than limits set --> excluded from plot
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5), legend.position="right") +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = "bottom")
+```
+<br>
+<br>
+
+```{r species compartments, echo=FALSE}
+
+ggplot(data.range, aes(x=species_phyla, colour=species_compartm, fill=species_compartm)) +
+      geom_bar(stat="count", position=position_dodge(), width= .6) +
+      ggtitle("Registered values by species compartment for phyla") + 
+      labs(x="", y="Number of registered values") +
+      scale_y_continuous(limits = c(0, 225), breaks = seq(0, 225, by = 25)) + 
+      #adjust scale, if numbers higher than limits set --> excluded from plot
+      facet_grid(species_type~.) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5), legend.position="bottom") +
+      theme(legend.title = element_blank())
+```
+<br>
+<br>
+<br>
+
+#### Alpha values
+Alpha frequency distribution of values registered up to date:
+
+```{r alpha distribution, echo=FALSE, warning=FALSE}
+ggplot(data.range, aes(x=alpha))+
+      geom_histogram(binwidth=0.1, 
+                     breaks = seq(0, 15, by = 0.2), 
+                     colour = "black", 
+                     fill = "white") +
+      geom_rug() +
+      geom_density(aes(y=..density..*10), colour="blue") +
+      scale_x_continuous(limits=c(0, 15)) +
+      scale_y_continuous(limits=c(0, 20)) +
+      facet_grid(type_uptake~species_type) +
+      ggtitle("Alpha frequency distribution") + 
+      labs(x="Alpha [l g^-1 dw h^-1 µM^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+```
+<br>
+<br>
+
+*Alpha frequency distribution portrayed as overlapping densities:*
+
+```{r alpha distribution overlapping, echo=FALSE, warning=FALSE}
+#Overlapping densities
+ggplot(data.range, aes(x=alpha, group=species_type, fill=species_type))+
+      geom_density(alpha=0.4) +
+      facet_grid(.~type_uptake) +
+      ggtitle("Alpha frequency distribution for Algae vs Seagrass") + 
+      labs(x="Alpha [l g^-1 dw h^-1 µM^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.9,.88))
+
+```
+<br>
+<br>
+Alpha values by nutrients:
+<br>
+
+```{r alpha distribution nutients, echo=FALSE, warning=FALSE}
+ggplot(data.range, aes(x=species_type, y=alpha)) +
+      geom_boxplot(outlier.shape=NA) +
+      geom_jitter(width=0.3, shape=21) +
+      facet_grid(type_uptake~nutrient) +
+      ggtitle("Alpha values for nutrients") + 
+      labs(x="Species type", y="Alpha [l g^-1 dw h^-1 µM^-1]") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+```
+<br>
+<br>
+
+*Alpha frequency distribution by nutrients portrayed as overlapping densities:*
+
+```{r alpha distribution nutrients overlapping, echo=FALSE, warning=FALSE}
+
+#Overlapping densities
+ggplot(data.range, aes(x=alpha, group=species_type, fill=species_type))+
+      geom_density(alpha=0.3) +
+      facet_grid(type_uptake~nutrient) +
+      ggtitle("Alpha frequency distribution by nutrient for Algae vs Seagrass") + 
+      labs(x="Alpha [l g^-1 dw h^-1 µM^-1]", y="Frequency") +
+      scale_x_continuous(limits=c(0, 0.75), breaks=seq(0, 1, by=0.25)) +
+      #scale_y_continuous(breaks = seq(0, 12, by =5)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = "bottom") +
+      theme(axis.text.x = element_text(angle = 90))
+```
+<br>
+<br>
+Alpha values by phyla and by nutrients over 60 minutes:
+<br>
+
+```{r alpha time, echo=FALSE, warning=FALSE}
+
+#by incubation time
+ggplot(data.range, aes(x=time, y=alpha, colour=nutrient)) +
+      geom_point(outlier.shape=NA) +
+      facet_grid(species_phyla~nutrient) +
+      ggtitle("Alpha values over 60 minutes") + 
+      labs(x="Time [minutes]", y="Alpha [l g^-1 dw h^-1 µM^-1]") +
+      scale_x_continuous(limits=c(0, 60)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.position = "none")
+```
+<br>
+<br>
+**Please note:** *a file was written as* ***Outliers_alpha.csv*** *and added to this reports feedback.*
+
+```{r alpha outliers, include=FALSE}
+out <- boxplot.stats(data.range$alpha)$out #look for outliers
+out_ind <- which(data.range$alpha %in% c(out))
+out_ind
+  
+outliers <- data.range[out_ind, ]
+outliers <- unique(outliers[,c("study_id", "id_short", "species", "species_type", 
+                                 "species_phyla", "species_compartm", "temperature_experiment", 
+                                 "lumination_experiment", "nutrient", "time", "type_uptake", 
+                                 "Vmax", "Km", "alpha", "annotations_exp")])
+  
+write_csv(outliers, file = "Outliers_alpha.csv")
+```
+<br>
+<br>
+<br>
+
+#### Vmax values
+Vmax frequency distribution of values registered  up to date:
+<br>
+
+```{r Vmax distribution, echo=FALSE, warning=FALSE}
+ggplot(data.range, aes(x=Vmax))+
+      geom_histogram(binwidth=0.1, 
+                     breaks = seq(0, 15, by = 0.2), 
+                     colour = "black", 
+                     fill = "white") +
+      geom_rug() +
+      geom_density(aes(y=..density..*10), colour="blue") +
+      scale_x_continuous(limits=c(0, 20)) +
+      scale_y_continuous(limits=c(0, 10)) +
+      facet_grid(type_uptake~species_type) +
+      ggtitle("Vmax frequency distribution") + 
+      labs(x="Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+```
+<br>
+<br>
+*Vmax frequency distribution portrayed as overlapping densities:*
+
+```{r Vmax distribution overlapping, echo=FALSE, warning=FALSE}
+#Overlapping densities
+ggplot(data.range, aes(x=Vmax, group=species_type, fill=species_type))+
+      geom_density(alpha=0.4) +
+      scale_x_continuous(limits=c(0,200)) +
+      facet_grid(.~type_uptake) +
+      ggtitle("Vmax frequency distribution for Algae vs Seagrass") + 
+      labs(x="Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = c(.9,.88))
+
+```
+<br>
+<br>
+
+Vmax values by nutrients:
+<br>
+
+```{r Vmax distribution nutrients, echo=FALSE, warning=FALSE}
+ggplot(data.range, aes(x=species_type, y=Vmax)) +
+      geom_boxplot(outlier.shape=NA) +
+      geom_jitter(width=0.3, shape=21) +
+      facet_grid(type_uptake~nutrient) +
+      ggtitle("Vmax values for nutrients") + 
+      labs(x="Species type", y="Vmax [µmol g^-1 dw h^-1]") +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5))
+```
+<br>
+<br>
+
+*Vmax frequency distribution by nutrients portrayed as overlapping densities:*
+
+```{r Vmax distribution nutrients overlapping, echo=FALSE, warning=FALSE}
+#Overlapping densities
+ggplot(data.range, aes(x=Vmax, group=species_type, fill=species_type))+
+      geom_density(alpha=0.3) +
+      facet_grid(type_uptake~nutrient) +
+      ggtitle("Vmax frequency distribution by nutrient for Algae vs Seagrass") + 
+      labs(x="Vmax [µmol g^-1 dw h^-1]", y="Frequency") +
+      scale_x_continuous(limits=c(0, 15), breaks=seq(0, 15, by=5)) +
+      #scale_y_continuous(breaks = seq(0, 1.5, by =0.5)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.title = element_blank()) +
+      theme(legend.position = "bottom") +
+      theme(axis.text.x = element_text(angle = 0))
+```
+<br>
+<br>
+Vmax values by phyla and by nutrients over 60 minutes:
+<br>
+
+```{r Vmax time, echo=FALSE, warning=FALSE}
+
+#by incubation time
+ggplot(data.range, aes(x=time, y=Vmax, colour=nutrient)) +
+      geom_point(outlier.shape=NA) +
+      facet_grid(species_phyla~nutrient) +
+      ggtitle("Vmax values over 60 minutes") + 
+      labs(x="Time [minutes]", y="Vmax [µmol g^-1 dw h^-1]") +
+      scale_x_continuous(limits=c(0, 60)) +
+      scale_y_continuous(limits=c(0,600)) +
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5)) +
+      theme(legend.position = "none")
+
+```
+<br>
+<br>
+**Please note:** *a file was written as* ***Outliers_Vmax.csv*** *and added to this reports feedback.*
+```{r Vmax outliers, include=FALSE}
+#Outliers
+out <- boxplot.stats(data.range$Vmax)$out #look for outliers
+out_ind <- which(data.range$Vmax %in% c(out))
+out_ind
+
+outliers <- data.range[out_ind, ]
+outliers <- unique(outliers[,c("study_id", "id_short", "species", "species_type", 
+                               "species_phyla", "species_compartm", "temperature_experiment", 
+                               "lumination_experiment", "nutrient", "time", "type_uptake", 
+                               "Vmax", "Km", "alpha", "annotations_exp")])
+
+write_csv(outliers, file = "Outliers_Vmax.csv")
+```
+<br>
+<br>
+<br>
+
+**This concludes this weeks feedback file.**
+<br>
+<br>
+If you have any suggestions or requests for other graphs and/or information, please let me know.
+Best, Simon
