@@ -23,7 +23,8 @@ packages <- c("tidyverse",      # for data science (general) - includes ggplot2
               "AICcmodavg",
               "rstatix",
               "car",
-              "lindia")
+              "lindia",
+              "lme4")
 
 for (i in seq_along(packages)) {
         if(!do.call(require, list(package = packages[i]))) {
@@ -327,7 +328,6 @@ data.all.log$Vmax <- log10(data.all.log$Vmax)
         #summary(three.way_2)
 
                 # AIC - find best-fit model
-                #install.packages("AICcmodavg")
                 #library(AICcmodavg)
                 
                 model.set <- list(one.way, two.way_1, two.way_2, three.way_1, three.way_2)
@@ -383,7 +383,20 @@ data.all.log$Vmax <- log10(data.all.log$Vmax)
                 #library(lindia)
                 gg_diagnose(alpha.model)
 
-        
+
+# MIXED MODEL
+#library(lme4)
+
+mixed.lmer <- lmer(alpha ~ species_type + type_uptake + nutrient + (1|temperature_experiment), data = data.all.log)
+summary(mixed.lmer)
+
+0.3473/(0.3473 + 0.6192)  # ~36 %
+
+plot(mixed.lmer)
+
+qqnorm(resid(mixed.lmer))
+qqline(resid(mixed.lmer))
+
 # DATA DISTRIBUTION PLOTS ALPHA -----------------------------------------
 
 length(data.algae$alpha[data.algae$alpha !="NA"]) #How many alpha values are there for algae
