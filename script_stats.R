@@ -2,7 +2,7 @@
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
 ## Created: Faro, 24th June 2021
-## Last modification: 28/06/2021
+## Last modification: 29/06/2021
 
 ## Simon Coburg
 ## email: simon.vonsachsencoburgundgotha@imbrsea.eu
@@ -19,8 +19,11 @@ packages <- c("tidyverse",      # for data science (general) - includes ggplot2
               "readxl",         # for reading xlsx files
               "devtools",
               "ggpubr",
-              "EnvStats")
-
+              "EnvStats",
+              "AICcmodavg",
+              "rstatix",
+              "car",
+              "lindia")
 
 for (i in seq_along(packages)) {
         if(!do.call(require, list(package = packages[i]))) {
@@ -210,7 +213,7 @@ kruskal.test(type_uptake ~ Vmax, data = data.all)
 
 # DATA DISTRIBUTION
 
-        #ALPHA
+        # ALPHA
         #Testing for skewness - higher number = the bigger the skew
         skewness(data.all$alpha, na.rm=TRUE)
                 #[1] 19.86958
@@ -228,7 +231,7 @@ kruskal.test(type_uptake ~ Vmax, data = data.all)
         ggsave(filename = "Alpha density.png", g) +
                 theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
-        #VMAX
+        # VMAX
         #Testing for skewness
         skewness(data.all$Vmax, na.rm=TRUE)
                 #[1] 4.427202
@@ -297,11 +300,90 @@ data.all.log$Vmax <- log10(data.all.log$Vmax)
                 ggsave(filename = "Vmax log.png", g) +
                         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
-                #Testing for normality
-                shapiro.test(data.all.log$Vmax)
+                        #Testing for normality
+                        shapiro.test(data.all.log$Vmax)
 
 
+                
+# ANOVA
+        # ALPHA        
+        # ONE WAY
+        one.way <- aov(alpha ~ species_type, data=data.all.log)
+        summary(one.way)
+        
+        # TWO WAY
+        two.way_1 <- aov(alpha ~ species_type + nutrient, data=data.all.log)
+        summary(two.way_1)
+        
+        two.way_2 <- aov(alpha ~ species_type + type_uptake, data=data.all.log)
+        summary(two.way_2)
+        
+        # THREE WAY
+        three.way <- aov(alpha ~ species_type + type_uptake + nutrient, data=data.all.log)
+        summary(three.way)
+        
+        #using temperature
+        #three.way_2 <- aov(alpha ~ species_type*temperature_experiment + type_uptake*temperature_experiment + nutrient*temperature_experiment, data=data.all.log)
+        #summary(three.way_2)
 
+                # AIC - find best-fit model
+                #install.packages("AICcmodavg")
+                #library(AICcmodavg)
+                
+                model.set <- list(one.way, two.way_1, two.way_2, three.way_1, three.way_2)
+                model.names <- c("one.way", "two.way_1", "two.way_2", "three.way", "")
+                
+                aictab(model.set, modnames = model.names)
+                      
+                
+                par(mfrow=c(2,2))
+                plot(three.way)
+                par(mfrow=c(1,1))
+                
+        
+        # POST HOC
+        TukeyHSD(three.way)
+        
+        # HOMOGENEITY OF VARIANCE
+        #library(car)
+        leveneTest(alpha ~ species_type, data = data.all.log)
+        leveneTest(alpha ~ type_uptake, data = data.all.log)
+        leveneTest(alpha ~ nutrient, data = data.all.log)
+        
+        
+        
+# ANCOVA
+        #ALPHA
+        alpha.model <- lm(alpha ~ species_type * type_uptake  * nutrient, data = data.all.log)
+        anova(alpha.model)
+        
+        summary(alpha.model)
+        
+                # ASSUMPTIONS
+                
+                # LINEARITY
+                #library(ggpubr)
+                ggscatter(data.all.log, x = "temperature_experiment", y = "alpha",
+                        facet.by = c("type_uptake", "species_type"),
+                        short.panel.labs = FALSE) +
+                        stat_smooth(method = "loess", span = 0.)
+                
+                # HOMOGENEITY OF REGRESSION SLOPES
+                #library(rstatix)
+                anova_test(alpha.model ~ species_type + type_uptake + nutrient +
+                                   species_type*type_uptake + species_type*nutrient +
+                                   type_uptake*nutrient, data = data.all.log)
+                
+                        
+                # NORMALITY OF RESIDUALS
+                alpha_residuals <- residuals(object = alpha.model)
+                shapiro.test(alpha_residuals)
+                
+                
+                #library(lindia)
+                gg_diagnose(alpha.model)
+
+        
 # DATA DISTRIBUTION PLOTS ALPHA -----------------------------------------
 
 length(data.algae$alpha[data.algae$alpha !="NA"]) #How many alpha values are there for algae
@@ -363,7 +445,9 @@ ggsave(filename = "Alpha nutrients.png", g) +
 # by phyla
 my_comparisons <- list(c("Chlorophyta", "Ochrophyta"), c("Chlorophyta", "Rhodophyta"), c("Chlorophyta", "Tracheophyta"),
                                       c("Ochrophyta", "Rhodophyta"), c("Ochrophyta", "Tracheophyta"), c("Rhodophyta", "Tracheophyta"))
+#Created in order to compare between groups with command stat_compare_means(comparisons=) within facet_grid
 
+        #Check colourblindfriendly colours for phyla (green, brown & red algae)
         #library(RColorBrewer)
         #display.brewer.all(colorblindFriendly = T)
         #display.brewer.pal(n=12, name= "RdBu")
@@ -394,9 +478,9 @@ ggsave(filename = "Alpha phyla.png", g) +
 # DATA DISTRIBUTION PLOTS VMAX ------------------------------------------
 
 length(data.algae$Vmax[data.algae$Vmax !="NA"]) #How many Vmax values are there for algae
-#[1] 810
+        #[1] 810
 length(data.seagrass$Vmax[data.seagrass$Vmax !="NA"]) #How many Vmax values are there for seagrass
-#[1] 226
+        #[1] 226
 
 g <- ggplot(data.all, aes(x=species_type, y=Vmax)) +
         geom_boxplot(outlier.shape = NA, width=0.6) +
@@ -453,11 +537,13 @@ ggsave(filename = "Vmax nutrients.png", g) +
 # by phyla
 my_comparisons <- list(c("Chlorophyta", "Ochrophyta"), c("Chlorophyta", "Rhodophyta"), c("Chlorophyta", "Tracheophyta"),
                        c("Ochrophyta", "Rhodophyta"), c("Ochrophyta", "Tracheophyta"), c("Rhodophyta", "Tracheophyta"))
+#Created in order to compare between groups with command stat_compare_means(comparisons=) within facet_grid
 
-#library(RColorBrewer)
-#display.brewer.all(colorblindFriendly = T)
-#display.brewer.pal(n=12, name= "RdBu")
-#brewer.pal(n=11, name= "RdBu")
+        #Check colourblindfriendly colours for phyla (green, brown & red algae)
+        #library(RColorBrewer)
+        #display.brewer.all(colorblindFriendly = T)
+        #display.brewer.pal(n=12, name= "RdBu")
+        #brewer.pal(n=11, name= "RdBu")
 
 g <- ggplot(data.all, aes(x=species_phyla, y=Vmax, fill=species_phyla)) +
         scale_fill_manual(values = c("#A1D99B", "#B35806", "#D6604D", "#44AA99")) +
@@ -477,8 +563,6 @@ g <- ggplot(data.all, aes(x=species_phyla, y=Vmax, fill=species_phyla)) +
 g
 ggsave(filename = "Vmax phyla.png", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
-
-
 
 
 
