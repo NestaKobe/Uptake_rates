@@ -2,7 +2,7 @@
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
 ## Created: Faro, 16th April 2021
-## Last modification: 25/06/2021
+## Last modification: 05/07/2021
 
 ## Simon Coburg and Carmen dos Santos
 ## email: simon.vonsachsencoburgundgotha@imbrsea.eu / cbsantos@ualg.pt
@@ -40,19 +40,19 @@ getwd()
 # DATA --------------------------------------------------------------------
 
 # load SOURCES
-data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_19.06.2021.xlsx",
+data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_final.xlsx",
                         sheet="sources",na="NA",skip=3)
 str(data.sou)
 names(data.sou)
 
 # load ENVIRONMENTAL
-data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_19.06.2021.xlsx",
+data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_final.xlsx",
                         sheet="environmental",na="NA",skip=3)
 str(data.env)
 names(data.env)
 
 # load EXPERIMENTAL
-data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_19.06.2021.xlsx",
+data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_final.xlsx",
                         sheet="experimental",na="NA",skip=3)
 str(data.exp)
 names(data.exp)
@@ -150,7 +150,7 @@ ggplot(gdata, aes(x=reorder(sample_country,n), y=n)) +   # here I have added "re
       geom_bar(stat="identity", na.rm=FALSE) + 
       coord_flip() +
       scale_x_discrete("Country") +
-      scale_y_continuous("Number of studies", limits = c(0, 25), breaks = seq(0, 25, by = 2)) +
+      scale_y_continuous("Number of studies", limits = c(0, 28), breaks = seq(0, 28, by = 2)) +
       ##adjust scale, if numbers higher than limits set --> excluded from plot
       theme_bw()
       
