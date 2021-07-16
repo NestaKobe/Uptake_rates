@@ -1,14 +1,16 @@
 # METADATA ----------------------------------------------------------------
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
-## Created: Faro, 08th July 2021
-## Last modification: 08/07/2021
+## Created: Faro, 15th July 2021
+## Last modification: 16/07/2021
 
-## Simon Coburg and Carmen dos Santos
-## email: simon.vonsachsencoburgundgotha@imbrsea.eu / cbsantos@ualg.pt
+## Carmen de los Santos & Simon Coburg
+## email: cbsantos@ualg.pt / simon.vonsachsencoburgundgotha@imbrsea.eu
 
 ## CODE FOR
-#2. STATS
+#1 STATISTICS
+#2 LM PLOTS
+
 
 # SETTINGS ----------------------------------------------------------------
 
@@ -42,156 +44,184 @@ setwd("~/Documents/IMBRSea/Thesis S4/RStudio Uptake rates")
 getwd()
 
 
-# DATA --------------------------------------------------------------------
+# DATA SOURCES --------------------------------------------------------------------
 
 # load SOURCES
 data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_final.xlsx",
                         sheet="sources",na="NA",skip=3)
-str(data.sou)
-names(data.sou)
 
 # load ENVIRONMENTAL
 data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_final.xlsx",
                         sheet="environmental",na="NA",skip=3)
-str(data.env)
-names(data.env)
 
 # load EXPERIMENTAL
 data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_final.xlsx",
                         sheet="experimental",na="NA",skip=3)
 str(data.exp)
-names(data.exp)
 
-data.exp$Vmax   <- as.numeric(data.exp$Vmax)
-data.exp$Km     <- as.numeric(data.exp$Km)
-data.exp$alpha  <- as.numeric(data.exp$alpha)
 data.exp$sampling_inter <- as.numeric(data.exp$sampling_inter)
 
-# MERGE spreadsheets
-data.ee <- merge(data.env,data.exp,by="id_short")
-data.all <- merge(data.sou, data.ee, by="study_id")
+nrow(data.exp)
+#[1] 878
 
-        nrow(data.all)
-        #[1] 1170
+# DATA STRUCTURE ---------------------------------------------------------------
 
-# FILTER OUT roots/rhizomes
-data.new <- filter(data.all, !species_compartm %in% c("Roots/rhizoids"))
-#View(data.all)
-        nrow(data.all)
-        #[1] 1036
+# create genera column
+data.exp$genera <- sapply(strsplit(data.exp$species," "),"[",1)
+table(data.exp$genera)
 
-# FILTER OUT nutrients AMINO ACID + UREA
-data.new <- filter(data.new, !nutrient %in% c("Amino acid"))
-        nrow(data.new)
-        #[1] 978
-data.new <- filter(data.new, !nutrient %in% c("Urea"))
-        nrow(data.all)
-        #[1] 958
+# create a column for nutrient group (organic or inorganic)
+data.exp$nutrient_group <- ifelse(data.exp$nutrient=="Amino acid" | data.exp$nutrient=="Urea","organic","inorganic")
+table(data.exp$nutrient_group,data.exp$nutrient) # check grouping is ok
 
-# FILTER by species type
-data.seagrass <- data.all[data.all$species_type == "Seagrass",]
-data.algae <- data.all[data.all$species_type == "Algae",]
+# create a dataset for leaves/fronds/whole algae only
+table(data.exp$species_compartm,data.exp$species_type)
+data.lea <- data.exp[data.exp$species_compartm=="Leaves" | data.exp$species_compartm=="Fronds"
+                     | data.exp$species_compartm=="Whole algae",]
+table(data.lea$species_compartm,data.lea$species_type)
 
-# FILTER by uptake type
-data.surge <- data.all[data.all$type_uptake =="Surge",]
-data.intern <- data.all[data.all$type_uptake == "Int. contr. phase",]
+# create a new category
+table(data.exp$species_compartm,data.exp$species_type)
+data.cat <- data.exp[data.exp$species_compartm=="Leaves" | data.exp$species_compartm=="Fronds"
+                     | data.exp$species_compartm=="Whole algae" | data.exp$species_compartm=="Roots",]
+table(data.cat$species_compartm,data.cat$species_type)
 
 
-# EXPLORATORY -------------------------------------------------------------
-
-# Species
-species_list <- unique(data.all[,c("species_phyla", "species")])
-species_list <- arrange(species_list, species_phyla, species)
-
-#view(species_list)
-#nrow(species_list)
-#table(species_list)
-
-write.table(as.data.frame(species_list),file="Species list.csv", quote=F,sep=",",row.names=F)
-
-# Genera
-data.all$genera <- sapply(strsplit(data.all$species, " "), "[",1)
-
-species.genera <- data.frame(table(data.all$genera))
-str(species.genera)
-
-#write.csv(species.genera, file="Species genera.csv", sep = ",")
-#species.genera  <- read_csv("~/Documents/IMBRSea/Thesis S4/RStudio Uptake rates/Species genera.csv")
-#str(species.genera)
-
-species.genera.phyla <- unique(data.all[,c("species_phyla", "genera")])
-str(species.genera.phyla)
-
-species_genera <- merge(species.genera,species.genera.phyla)
-str(species_genera)
-
-col_order <- c("species_phyla", "genera", "frequency")
-species_genera <- species_genera[, col_order]
-species_genera
-
-species_genera %>% arrange(species_phyla) %>% write_csv("Species genera.csv")
-
-# STAT - CORRELATIONS --------------------------------------------------------------
-
-#DATA SET
-data.mod <- data.new[,c("species_type", "species_phyla", "nutrient", "type_uptake", #fixed factors
-                        "species", "genera",                                        #random factors?
-                        "temperature_experiment",                                   #co-variable?
-                        "Vmax", "alpha")]                                           #response variables
+data.cat$category1 <- paste0(data.cat$species_type,"-",data.cat$species_compartm)
+table(data.cat$category1)
+data.cat$category2 <- ifelse(data.cat$category1=="Algae-Whole algae" | data.cat$category1=="Algae-Fronds","Algae",data.lea$category1)
+table(data.cat$category2)
 
 
-#Correlation Vmax and alpha
-ggplot(data.mod, aes(x=alpha, y=Vmax, colour=species_type)) +
-        geom_point(shape=21) +
-        geom_smooth(method="lm") +
-        scale_x_log10() +
-        scale_y_log10()
+# DATA SUMMARY (data.lea) ------------------------------------------------------------
+# data structure
+table(data.lea$species_type,data.lea$nutrient, data.lea$type_uptake)
 
-ggplot(data.mod, aes(x=alpha, y=Vmax, colour=species_type)) +
-        geom_point(shape=21) +
-        geom_smooth(method="lm") +
-        scale_x_continuous(limits=c(0, 30))
+table(data.lea$species_type,data.lea$type_uptake)
+table(data.lea$species_type,data.lea$species_compartm)
 
-ggplot(data.mod, aes(x=alpha, y=Vmax, colour=species_type)) +
-        geom_point(shape=21) +
-        geom_smooth(method="lm") +
-        facet_grid(.~type_uptake) +
-        scale_x_log10() +
-        scale_y_log10()
+# number of species
+species <- data.frame(table(data.lea$species,data.lea$species_phyla))
+species <- species[species$Freq!=0,]
+table(species$Var2)
 
-ggplot(data.mod, aes(x=alpha, y=Vmax, colour=species_phyla)) +
-        geom_point(shape=21) +
+# number of values Vmax
+table(is.na(data.lea$Vmax))
+data <- data.lea[is.na(data.lea$Vmax)==F,]
+table(data$type_uptake,data$nutrient,data$species_type)
+table(data$type_uptake,data$species_phyla)
+table(data$type_uptake,data$nutrient,data$species_phyla)
+
+# number of values alpha
+table(is.na(data.lea$alpha))
+data <- data.lea[is.na(data.lea$alpha)==F,]
+table(data$type_uptake,data$nutrient,data$species_type)
+table(data$type_uptake,data$species_phyla)
+table(data$type_uptake,data$nutrient,data$species_phyla)
+
+# clean
+rm(data,species)
+
+
+# DATA SUMMARY INORGANIC (data.lea) ------------------------------------------------------------
+#FILTER OUT inorganic nutrients
+data.organic <- data.lea[data.lea$nutrient_group=="organic",]
+nrow(data.organic)
+
+# FILTER OUT organic nutrients
+data.lea <- data.lea[data.lea$nutrient_group=="inorganic",]
+nrow(data.lea)
+
+# data structure
+table(data.lea$species_type,data.lea$nutrient)
+table(data.lea$species_type,data.lea$type_uptake)
+table(data.lea$species_type,data.lea$species_compartm)
+
+# number of species
+species <- data.frame(table(data.lea$species,data.lea$species_phyla))
+species <- species[species$Freq!=0,]
+table(species$Var2)
+
+# number of values Vmax
+table(is.na(data.lea$Vmax))
+data <- data.lea[is.na(data.lea$Vmax)==F,]
+table(data$type_uptake,data$nutrient,data$species_type)
+table(data$type_uptake,data$nutrient,data$species_phyla)
+
+# number of values alpha
+table(is.na(data.lea$alpha))
+data <- data.lea[is.na(data.lea$alpha)==F,]
+table(data$type_uptake,data$nutrient,data$species_type)
+table(data$type_uptake,data$nutrient,data$species_phyla)
+
+# clean
+rm(data,species)
+
+# STAT - CORRELATIONS (LEAVES/FRONDS/WHOLE ALGAE - INORGANIC NUTRIENTS) --------------------------------------------------------------
+
+# data set - important columns
+# FIXED FACTORS      >> "species_type","nutrient","type_uptake","species_phyla"
+# RANDOM FACTORS     >> "species","genera"
+# CO-VARIABLE        >> "temperature_experiment"
+# RESPONSE VARIABLES >> "Vmax","alpha"
+
+# correlation Vmax and alpha (species type)
+
+ggplot(data.lea,aes(x=alpha,y=Vmax,colour=species_type)) +
+        geom_point(shape=21,alpha=0.5) +
         geom_smooth(method="lm") +
         scale_x_log10() +
         scale_y_log10() +
-        theme_bw()
+        facet_grid(.~type_uptake)
 
-ggplot(data.mod, aes(x=alpha, y=Vmax, colour=species_phyla)) +
+ggplot(data.lea,aes(x=alpha,y=Vmax,colour=type_uptake)) +
+        geom_point(shape=21,alpha=0.5) +
+        geom_smooth(method="lm") +
+        scale_x_log10() +
+        scale_y_log10()
+
+ggplot(data.lea,aes(y=Vmax,x=species_type,colour=type_uptake)) +
+        geom_boxplot() +
+        geom_smooth(method="lm") +
+        scale_y_log10()
+
+# ancova
+mod <- lm(log10(Vmax)~log10(alpha)*species_type*type_uptake,data.lea)
+summary(mod)
+Anova(mod)
+
+# mod <- lm(log10(alpha)~log10(Vmax)*species_type*type_uptake,data.lea)
+# summary(mod)
+# Anova(mod)
+
+# correlation Vmax and alpha (species phyla)
+ggplot(data.lea,aes(y=Vmax,x=alpha,colour=species_phyla)) +
+        geom_point(shape=21,alpha=0.5) +
+        geom_smooth(method="lm") +
+        scale_x_log10() +
+        scale_y_log10()
+
+ggplot(data.lea,aes(y=alpha,x=Vmax,colour=species_phyla)) +
+        geom_point(shape=21,alpha=0.5) +
+        geom_smooth(method="lm") +
+        scale_x_log10() +
+        scale_y_log10()
+
+# EFFECT TEMPERATURE ------------------------------------------------------
+
+ggplot(data.lea,aes(x=temperature_experiment,y=Vmax,colour=species_type)) +
         geom_point(shape=21) +
         geom_smooth(method="lm") +
-        scale_x_continuous(limits=c(0, 30))
+        scale_x_log10() +
+        scale_y_log10()
 
+ggplot(data.lea,aes(x=temperature_experiment,y=alpha,colour=species_type)) +
+        geom_point(shape=21) +
+        geom_smooth(method="lm") +
+        scale_x_log10() +
+        scale_y_log10()
 
-# STAT - STEPWISE REGRESSION (MODEL 1)----------------------------------------------
-library("MASS")
-
-#fit the full model
-mod1 <- lm(log10(Vmax)~species_type*nutrient*type_uptake, data.mod) #interactive
-#mod2 <- lm(log10(Vmax)~species_type+nutrient+type_uptake, data.mod) #additive
- 
-step1 <- stepAIC(mod1, direction="both", trace=TRUE)
-summary(mod1)
-anova(step1)
-
-# STAT - LMER (MODEL 2)-------------------------------------------------------------
-
-names(data.mod)
-
-mod2<- lmer(log10(Vmax)~species_type*nutrient*type_uptake+(1|species), data.mod)
-mod3<- lmer(log10(Vmax)~Species_type+nutrient+type_uptake+(1|species), data.mod)
-
-AIC(mod2, mod3)
-
-
-
-
+mod <- lm(Vmax~temperature_experiment*species_type,data.lea)
+summary(mod)
+mod <- lm(alpha~temperature_experiment*species_type,data.lea)
+summary(mod)

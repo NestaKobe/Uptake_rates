@@ -2,13 +2,14 @@
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
 ## Created: Faro, 24th June 2021
-## Last modification: 05/07/2021
+## Last modification: 16/07/2021
 
 ## Simon Coburg
 ## email: simon.vonsachsencoburgundgotha@imbrsea.eu
 
 ## CODE FOR
-#1 PLOTS
+#1 DATA STRUCTURE
+#2 PLOTS
 
 
 # SETTINGS ----------------------------------------------------------------
@@ -43,67 +44,129 @@ setwd("~/Documents/IMBRSea/Thesis S4/RStudio Uptake rates")
 getwd()
 
 
-# DATA --------------------------------------------------------------------
+# DATA SOURCES --------------------------------------------------------------------
 
 # load SOURCES
 data.sou  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_final.xlsx",
                         sheet="sources",na="NA",skip=3)
-#str(data.sou)
-#names(data.sou)
 
 # load ENVIRONMENTAL
 data.env  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_final.xlsx",
                         sheet="environmental",na="NA",skip=3)
-#str(data.env)
-#names(data.env)
 
 # load EXPERIMENTAL
 data.exp  <- read_excel("~/Documents/IMBRSea/Thesis S4/Database uptake rate_final.xlsx",
                         sheet="experimental",na="NA",skip=3)
-#str(data.exp)
-#names(data.exp)
+str(data.exp)
 
-data.exp$Vmax   <- as.numeric(data.exp$Vmax)
-data.exp$Km     <- as.numeric(data.exp$Km)
-data.exp$alpha  <- as.numeric(data.exp$alpha)
 data.exp$sampling_inter <- as.numeric(data.exp$sampling_inter)
+
+nrow(data.exp)
+#[1] 878
+
+# quality controls
+length(unique(data.env$id_short))
+length(unique(data.exp$id_short))
 
 # MERGE spreadsheets
 data.ee <- merge(data.env,data.exp,by="id_short")
 data.all <- merge(data.sou, data.ee, by="study_id")
 
-#nrow(data.all)
-#[1] 1170
 
-# FILTER OUT roots/rhizomes
-data.new <- filter(data.all, !species_compartm %in% c("Roots/rhizoids"))
-#View(data.new)
-nrow(data.new)
-#[1] 1036
-        
-# FILTER FOR ORGANIC nutrients ONLY
-data.amino <- filter(data.new[data.new$nutrient == "Amino acid",])
-nrow(data.amino)
-#[1] 58
-data.urea <-  filter(data.new[data.new$nutrient == "Urea",])
-nrow(data.urea)
-#[1] 20
-        # MERGE datasets
-        data.organic <- merge(data.amino, data.urea, by="id_short")
-        rm(data.amino, data.urea)
+# DATA STRUCTURE ---------------------------------------------------------------
 
-# FILTER OUT nutrients AMINO ACID + UREA
-data.inorganic <- filter(data.new, !nutrient %in% c("Amino acid"))
-nrow(data.inorganic)
-#[1] 978
-data.inorganic <- filter(data.inorganic, !nutrient %in% c("Urea"))
-nrow(data.inorganic)
-#[1] 958
+# create genera column
+data.exp$genera <- sapply(strsplit(data.exp$species," "),"[",1)
+table(data.exp$genera)
+
+# create a column for nutrient group (organic or inorganic)
+data.exp$nutrient_group <- ifelse(data.exp$nutrient=="Amino acid" | data.exp$nutrient=="Urea","organic","inorganic")
+table(data.exp$nutrient_group,data.exp$nutrient) # check grouping is ok
+
+# create a dataset for leaves/fronds/whole algae only
+table(data.exp$species_compartm,data.exp$species_type)
+data.lea <- data.exp[data.exp$species_compartm=="Leaves" | data.exp$species_compartm=="Fronds"
+                     | data.exp$species_compartm=="Whole algae",]
+table(data.lea$species_compartm,data.lea$species_type)
+
+
+# DATA SUMMARY (data.lea) ------------------------------------------------------------
+
+# data structure
+table(data.lea$species_type,data.lea$nutrient, data.lea$type_uptake)
+table(data.lea$species_type,data.lea$type_uptake)
+table(data.lea$species_type,data.lea$species_compartm)
+
+# number of species
+species <- data.frame(table(data.lea$species,data.lea$species_phyla))
+species <- species[species$Freq!=0,]
+table(species$Var2)
+
+# number of values Vmax
+table(is.na(data.lea$Vmax))
+data <- data.lea[is.na(data.lea$Vmax)==F,]
+table(data$type_uptake,data$nutrient,data$species_type)
+table(data$type_uptake,data$species_phyla)
+table(data$type_uptake,data$nutrient,data$species_phyla)
+
+# number of values alpha
+table(is.na(data.lea$alpha))
+data <- data.lea[is.na(data.lea$alpha)==F,]
+table(data$type_uptake,data$nutrient,data$species_type)
+table(data$type_uptake,data$species_phyla)
+table(data$type_uptake,data$nutrient,data$species_phyla)
+
+# Summary
+summary(log10(data.exp$Vmax))
+summary(log10(data.exp$alpha))
+
+
+# clean
+rm(data,species)
+
+
+# DATA SUMMARY INORGANIC (data.lea) ------------------------------------------------------------
+
+# FILTER OUT inorganic nutrients
+data.lea.org <- data.lea[data.lea$nutrient_group=="organic",]
+nrow(data.organic)
+
+# FILTER OUT organic nutrients
+data.lea <- data.lea[data.lea$nutrient_group=="inorganic",]
+nrow(data.lea)
+
+# data structure
+table(data.lea$species_type,data.lea$nutrient)
+table(data.lea$species_type,data.lea$type_uptake)
+table(data.lea$species_type,data.lea$species_compartm)
+
+# number of species
+species <- data.frame(table(data.lea$species,data.lea$species_phyla))
+species <- species[species$Freq!=0,]
+table(species$Var2)
+
+# number of values Vmax
+table(is.na(data.lea$Vmax))
+data <- data.lea[is.na(data.lea$Vmax)==F,]
+table(data$type_uptake,data$nutrient,data$species_type)
+table(data$type_uptake,data$nutrient,data$species_phyla)
+
+# number of values alpha
+table(is.na(data.lea$alpha))
+data <- data.lea[is.na(data.lea$alpha)==F,]
+table(data$type_uptake,data$nutrient,data$species_type)
+table(data$type_uptake,data$nutrient,data$species_phyla)
+
+# clean
+rm(data,species)
+
 
 
 # EXPLORATORY PLOTS -------------------------------------------------------------
 
-##Number of studies assessed
+###DATA.SOURCES
+
+## Number of studies assessed
 genv <- unique(data.all[,c("study_id", "year")]) # create data for ggplot
 #using the unique function with study_id and year you eliminate repeated countries within the same study
 
@@ -114,11 +177,8 @@ sum(gdata$n)
 
 rm(gdata, genv) # delete gdata
 
-#---#
 
-###DATA.SOURCES
-
-##Publication year
+## Publication year
 genv <- unique(data.all[,c("study_id", "year")])# create data for ggplot
 #using the unique function with study_id and year you eliminate repeated countries within the same study
 
@@ -143,11 +203,10 @@ ggsave(filename = "Publication year.svg", g) +
 
 rm(gdata, genv) # delete gdata
 
-#---#
 
 ###DATA.ENV
 
-#Sampling country
+## Sampling country
 genv <- unique(data.all[,c("study_id", "sample_country")]) # create data for ggplot - 
 #using the unique function with study_id and sample_country you eliminate repeated countries within the same study
 
@@ -170,7 +229,7 @@ ggsave(filename = "Study sites.svg", g) +
 rm(gdata, genv) # delete gdata
 
 
-# DATA DISTRIBUTION PLOTS ALPHA ------------------------------------------------
+# DATA DISTRIBUTION PLOTS ------------------------------------------------
 
 #Original data distribution
 #both Vmax & Alpha are highly skewed - non normal distributed residuals (see script_pre-stats.R)
@@ -179,38 +238,38 @@ rm(gdata, genv) # delete gdata
 my_comparisons <- list(c("Algae", "Seagrass"))
 
 #VMAX
-g <- ggplot(data.inorganic, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
+g <- ggplot(data.lea, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
         geom_boxplot(width=0.6) +
         #stat_compare_means(label.y=3.75, label.x=1.25) +
         #stat_compare_means(label = "p.signif", label.y=3.25, label.x = 0.965) +
         stat_compare_means(comparisons=my_comparisons) +
-        scale_y_continuous(limits = c(-4.5, 4)) +
+        scale_y_continuous(limits = c(-3.5, 3.5)) +
         labs(x="", y="(log10) Vmax [µmol g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
         theme_bw() +
         theme(axis.text=element_text(size=12), axis.title.y = element_text(size=13)) +
         theme(legend.title = element_blank()) +
-        theme(legend.position = "") +
-        geom_text(x=1.3, y= -4.2, label="n = 709", size=3.7) + #Algae alpha values
-        geom_text(x=2.3, y= -4.2, label="n = 220", size=3.7)  #Seagrass alpha values
+        theme(legend.position = "")
+        #geom_text(x=1.3, y= -4.2, label="n = ", size=3.7) + #Algae alpha values
+        #geom_text(x=2.3, y= -4.2, label="n = 220", size=3.7)  #Seagrass alpha values
 
 g
 ggsave(filename = "Vmax inorganic.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 #ALPHA
-g <- ggplot(data.new, aes(x=species_type, y=log10(alpha), fill=species_type)) +
+g <- ggplot(data.lea, aes(x=species_type, y=log10(alpha), fill=species_type)) +
         geom_boxplot(width=0.6) +
         #stat_compare_means(label.y=4, label.x=1.25) +
         #stat_compare_means(label = "p.signif", label.y = 2.8, label.x = 0.965) +
         stat_compare_means(comparisons = my_comparisons) +
-        scale_y_continuous(limits = c(-4.5, 4)) +
+        scale_y_continuous(limits = c(-3.5, 3.5)) +
         labs(x="", y="(log10) Alpha [l g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
         theme_bw() +
         theme(axis.text=element_text(size=12), axis.title.y = element_text(size=13)) +
         theme(legend.title = element_blank()) +
-        theme(legend.position = "") +
-        geom_text(x=1.3, y= -4.2, label="n = 801", size=3.7) + #Algae alpha values
-        geom_text(x=2.3, y= -4.2, label="n = 226", size=3.7)  #Seagrass alpha values
+        theme(legend.position = "")
+        #geom_text(x=1.3, y= -4.2, label="n = 801", size=3.7) + #Algae alpha values
+        #geom_text(x=2.3, y= -4.2, label="n = 226", size=3.7)  #Seagrass alpha values
 
 g
 ggsave(filename = "Alpha inorganic.svg", g) +
@@ -223,7 +282,7 @@ ggsave(filename = "Alpha inorganic.svg", g) +
 #my_comparisons <- list(c("Algae", "Seagrass"))
 
 #VMAX
-g <- ggplot(data.inorganic, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
+g <- ggplot(data.lea, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
         geom_boxplot(width=0.6) +
         #stat_compare_means(size=3.5, label.y = 3.5) +
         #stat_compare_means(label = "p.signif", label.y = 3, label.x = 0.95, hide.ns = TRUE) +
@@ -241,7 +300,7 @@ ggsave(filename = "Vmax inorg. uptake type.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 #ALPHA
-g <- ggplot(data.inorganic, aes(x=species_type, y=log10(alpha), fill=species_type)) +
+g <- ggplot(data.lea, aes(x=species_type, y=log10(alpha), fill=species_type)) +
         geom_boxplot(width=0.6) +
         stat_compare_means(comparisons = my_comparisons) +
         facet_grid(.~type_uptake) +
@@ -263,8 +322,9 @@ ggsave(filename = "Alpha inorg. uptake type.svg", g) +
 #by nutrients
 #my_comparisons <- list(c("Algae", "Seagrass"))
 
+#INORGANIC
 #VMAX
-g <- ggplot(data.inorganic, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
+g <- ggplot(data.lea, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
         geom_boxplot(width=0.6) +
         #stat_compare_means(label.y = 3.5, size=2.1) +
         stat_compare_means(comparisons = my_comparisons, size=2.5) +
@@ -284,7 +344,7 @@ ggsave(filename = "Vmax inorg. nutrients.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 #ALPHA
-g <- ggplot(data.inorganic, aes(x=species_type, y=log10(alpha), fill=species_type)) +
+g <- ggplot(data.lea, aes(x=species_type, y=log10(alpha), fill=species_type)) +
         geom_boxplot(width=0.6) +
         #stat_compare_means(label.y = 2.6, size=2.1) +
         #stat_compare_means(label = "p.signif", label.y = 2, label.x = 0.89, size=2.5, hide.ns = TRUE) +
@@ -303,9 +363,52 @@ g
 ggsave(filename = "Alpha inorg. nutrients.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
+
+#ORGANIC
+#VMAX
+g <- ggplot(data.lea.org, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
+        geom_boxplot(width=0.6) +
+        #stat_compare_means(label.y = 3.5, size=2.1) +
+        stat_compare_means(comparisons = my_comparisons, size=2.5) +
+        #stat_compare_means(label = "p.signif", label.y = 3, label.x = 0.925, size=2.5, hide.ns = TRUE) +
+        facet_grid(type_uptake~nutrient) +
+        scale_y_continuous(limits = c(-4, 4)) +
+        labs(x="", y="(log10) Vmax [µmol g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
+        theme_bw() +
+        theme(axis.text=element_text(size=12), axis.title.y = element_text(size=13)) +
+        theme(legend.title = element_blank()) +
+        theme(legend.position = "bottom") +
+        theme(axis.ticks.x = element_blank(),
+              axis.text.x = element_blank())
+
+g
+ggsave(filename = "Vmax org. nutrients.svg", g) +
+        theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
+
+#ALPHA
+g <- ggplot(data.lea.org, aes(x=species_type, y=log10(alpha), fill=species_type)) +
+        geom_boxplot(width=0.6) +
+        #stat_compare_means(label.y = 2.6, size=2.1) +
+        #stat_compare_means(label = "p.signif", label.y = 2, label.x = 0.89, size=2.5, hide.ns = TRUE) +
+        facet_grid(type_uptake~nutrient) +
+        stat_compare_means(comparisons = my_comparisons, size=2.5) +
+        scale_y_continuous(limits = c(-4, 4)) +
+        labs(x="", y="(log10) Alpha [l g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
+        theme_bw() +
+        theme(axis.text=element_text(size=12), axis.title.y = element_text(size=13)) +
+        theme(legend.title = element_blank()) +
+        theme(legend.position = "bottom") +
+        theme(axis.ticks.x = element_blank(),
+              axis.text.x = element_blank())
+
+g
+ggsave(filename = "Alpha org. nutrients.svg", g) +
+        theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 #---#
 
-# by phyla
+
+# by phyla ----------------------------------------------------------------
+
 my_comparisons <- list(c("Chlorophyta", "Ochrophyta"), c("Chlorophyta", "Rhodophyta"), c("Chlorophyta", "Tracheophyta"),
                                       c("Ochrophyta", "Rhodophyta"), c("Ochrophyta", "Tracheophyta"), c("Rhodophyta", "Tracheophyta"))
 #Created in order to compare between groups with command stat_compare_means(comparisons=) within facet_grid
@@ -315,8 +418,9 @@ my_comparisons <- list(c("Chlorophyta", "Ochrophyta"), c("Chlorophyta", "Rhodoph
         #display.brewer.all(colorblindFriendly = T)
         #display.brewer.pal(n=12, name= "RdBu")
         #brewer.pal(n=11, name= "RdBu")
+
 #VMAX
-g <- ggplot(data.inorganic, aes(x=species_phyla, y=log10(Vmax), fill=species_phyla)) +
+g <- ggplot(data.lea, aes(x=species_phyla, y=log10(Vmax), fill=species_phyla)) +
         scale_fill_manual(values = c("#A1D99B", "#B35806", "#D6604D", "#44AA99")) +
         geom_boxplot(width=0.5) +
         facet_grid(type_uptake~.) +
@@ -332,13 +436,12 @@ g <- ggplot(data.inorganic, aes(x=species_phyla, y=log10(Vmax), fill=species_phy
         theme(legend.position = "")
 
 g
-ggsave(filename = "Vmax inorg. phyla.png", g) +
+ggsave(filename = "Vmax inorg. phyla.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 
-
 #ALPHA
-g <- ggplot(data.inorganic, aes(x=species_phyla, y=log10(alpha), fill=species_phyla)) +
+g <- ggplot(data.lea, aes(x=species_phyla, y=log10(alpha), fill=species_phyla)) +
         scale_fill_manual(values = c("#A1D99B", "#B35806", "#D6604D", "#44AA99")) +
         geom_boxplot(width=0.5) +
         facet_grid(type_uptake~.) +
@@ -356,196 +459,3 @@ g
 ggsave(filename = "Alpha inorg. phyla.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
-
-
-# VALUES PER INDEPENDENT FACTOR -------------------------------------------
-
-#Overall
-sum(!is.na(data.surge$alpha))
-        #[1] 491
-sum(!is.na(data.intern$alpha))
-        #[1] 536
-
-## BY UPTAKE TYPE
-#SURGE
-#SEAGRASS
-data.surge.seagrass <- data.surge[data.surge$species_type == "Seagrass",]
-
-        #VMAX 
-        sum(!is.na(data.surge.seagrass$Vmax))
-                #[1]
-        #ALPHA
-        sum(!is.na(data.surge.seagrass$alpha))
-                #[1] 130
-#ALGAE
-data.surge.algae <- data.surge[data.surge$species_type == "Algae",]
-        #VMAX
-        sum(!is.na(data.surge.algae$Vmax))
-                #[1]
-        #ALPHA
-        sum(!is.na(data.surge.algae$alpha))
-                #[1] 361
-                
-
-#INT. CONTR. PHASE
-#SEAGRASS
-data.intern.seagrass <- data.intern[data.intern$species_type == "Seagrass",]
-        #VMAX
-        sum(!is.na(data.intern.seagrass$Vmax))
-                #[1] 96
-        #ALPHA
-        sum(!is.na(data.intern.seagrass$alpha))
-                #[1] 96
-#ALGAE
-data.intern.algae <- data.intern[data.intern$species_type == "Algae",]
-        #VMAX
-        sum(!is.na(data.intern.algae$Vmax))
-                #[1] 398
-        #ALPHA
-        sum(!is.na(data.intern.algae$alpha))
-                #[1] 440
-        
-                
-#SURGE
-        #VMAX
-        #SEAGRASS
-        sum(!is.na(data.surge.seagrass$Vmax))
-                #[1] 128
-        #ALGAE
-        sum(!is.na(data.surge.algae$Vmax))
-                #[1] 311
-        
-
-## BY NUTRIENTS
-#SURGE
-data.surge.seagrass.amin <- data.surge.seagrass[data.surge.seagrass$nutrient == "Amino acid",]
-data.surge.seagrass.ammo <- data.surge.seagrass[data.surge.seagrass$nutrient == "Ammonium",]
-data.surge.seagrass.nitr <- data.surge.seagrass[data.surge.seagrass$nutrient == "Nitrate",]
-data.surge.seagrass.phos <- data.surge.seagrass[data.surge.seagrass$nutrient == "Phosphate",]
-data.surge.seagrass.urea <- data.surge.seagrass[data.surge.seagrass$nutrient == "Urea",]
-
-data.surge.algae.amin <- data.surge.algae[data.surge.algae$nutrient == "Amino acid",]
-data.surge.algae.ammo <- data.surge.algae[data.surge.algae$nutrient == "Ammonium",]
-data.surge.algae.nitr <- data.surge.algae[data.surge.algae$nutrient == "Nitrate",]
-data.surge.algae.phos <- data.surge.algae[data.surge.algae$nutrient == "Phosphate",]
-data.surge.algae.urea <- data.surge.algae[data.surge.algae$nutrient == "Urea",]
-
-        #SEAGRASS
-        #ALPHA
-        sum(!is.na(data.surge.seagrass.amin$alpha))
-        sum(!is.na(data.surge.seagrass.ammo$alpha))
-        sum(!is.na(data.surge.seagrass.nitr$alpha))
-        sum(!is.na(data.surge.seagrass.phos$alpha))
-        sum(!is.na(data.surge.seagrass.urea$alpha))
-        
-        #SEAGRASS
-        #VMAX
-        sum(!is.na(data.surge.seagrass.amin$Vmax))
-        sum(!is.na(data.surge.seagrass.ammo$Vmax))
-        sum(!is.na(data.surge.seagrass.nitr$Vmax))
-        sum(!is.na(data.surge.seagrass.phos$Vmax))
-        sum(!is.na(data.surge.seagrass.urea$Vmax))
-
-        #ALGAE
-        #ALPHA
-        sum(!is.na(data.surge.algae.amin$alpha))
-        sum(!is.na(data.surge.algae.ammo$alpha))
-        sum(!is.na(data.surge.algae.nitr$alpha))
-        sum(!is.na(data.surge.algae.phos$alpha))
-        sum(!is.na(data.surge.algae.urea$alpha))
-        
-        #ALGAE
-        #VMAX
-        sum(!is.na(data.surge.algae.amin$Vmax))
-        sum(!is.na(data.surge.algae.ammo$Vmax))
-        sum(!is.na(data.surge.algae.nitr$Vmax))
-        sum(!is.na(data.surge.algae.phos$Vmax))
-        sum(!is.na(data.surge.algae.urea$Vmax))
-        
-
-#INT. CONTR. PHASE
-data.intern.seagrass.amin <- data.intern.seagrass[data.intern.seagrass$nutrient == "Amino acid",]
-data.intern.seagrass.ammo <- data.intern.seagrass[data.intern.seagrass$nutrient == "Ammonium",]
-data.intern.seagrass.nitr <- data.intern.seagrass[data.intern.seagrass$nutrient == "Nitrate",]
-data.intern.seagrass.phos <- data.intern.seagrass[data.intern.seagrass$nutrient == "Phosphate",]
-data.intern.seagrass.urea <- data.intern.seagrass[data.intern.seagrass$nutrient == "Urea",]
-
-data.intern.algae.amin <- data.intern.algae[data.intern.algae$nutrient == "Amino acid",]
-data.intern.algae.ammo <- data.intern.algae[data.intern.algae$nutrient == "Ammonium",]
-data.intern.algae.nitr <- data.intern.algae[data.intern.algae$nutrient == "Nitrate",]
-data.intern.algae.phos <- data.intern.algae[data.intern.algae$nutrient == "Phosphate",]
-data.intern.algae.urea <- data.intern.algae[data.intern.algae$nutrient == "Urea",]
-        
-        #SEAGRASS
-        #VMAX
-        sum(!is.na(data.intern.seagrass.amin$Vmax))
-        sum(!is.na(data.intern.seagrass.ammo$Vmax))
-        sum(!is.na(data.intern.seagrass.nitr$Vmax))
-        sum(!is.na(data.intern.seagrass.phos$Vmax))
-        sum(!is.na(data.intern.seagrass.urea$Vmax))
-
-        #SEAGRASS
-        #ALPHA
-        sum(!is.na(data.intern.seagrass.amin$alpha))
-        sum(!is.na(data.intern.seagrass.ammo$alpha))
-        sum(!is.na(data.intern.seagrass.nitr$alpha))
-        sum(!is.na(data.intern.seagrass.phos$alpha))
-        sum(!is.na(data.intern.seagrass.urea$alpha))
-        
-        
-        #ALGAE
-        #VMAX
-        sum(!is.na(data.intern.algae.amin$Vmax))
-        sum(!is.na(data.intern.algae.ammo$Vmax))
-        sum(!is.na(data.intern.algae.nitr$Vmax))
-        sum(!is.na(data.intern.algae.phos$Vmax))
-        sum(!is.na(data.intern.algae.urea$Vmax))
-        
-        #ALGAE
-        #ALPHA
-        sum(!is.na(data.intern.algae.amin$alpha))
-        sum(!is.na(data.intern.algae.ammo$alpha))
-        sum(!is.na(data.intern.algae.nitr$alpha))
-        sum(!is.na(data.intern.algae.phos$alpha))
-        sum(!is.na(data.intern.algae.urea$alpha))
-        
-
-## BY PHYLA
-        
-#SURGE
-data.surge.chl <- data.surge[data.surge$species_phyla == "Chlorophyta",]
-data.surge.och <- data.surge[data.surge$species_phyla == "Ochrophyta",]
-data.surge.rho <- data.surge[data.surge$species_phyla == "Rhodophyta",]
-data.surge.tra <- data.surge[data.surge$species_phyla == "Tracheophyta",]
-
-        #VMAX
-        sum(!is.na(data.surge.chl$Vmax))
-        sum(!is.na(data.surge.och$Vmax))
-        sum(!is.na(data.surge.rho$Vmax))
-        sum(!is.na(data.surge.tra$Vmax))
-        
-        #ALPHA
-        sum(!is.na(data.surge.chl$alpha))
-        sum(!is.na(data.surge.och$alpha))
-        sum(!is.na(data.surge.rho$alpha))
-        sum(!is.na(data.surge.tra$alpha))
-        
-
-#INT. CONT. PHASE
-data.intern.chl <- data.intern[data.intern$species_phyla == "Chlorophyta",]
-data.intern.och <- data.intern[data.intern$species_phyla == "Ochrophyta",]
-data.intern.rho <- data.intern[data.intern$species_phyla == "Rhodophyta",]
-data.intern.tra <- data.intern[data.intern$species_phyla == "Tracheophyta",]        
-        
-        #VMAX
-        sum(!is.na(data.intern.chl$Vmax))
-        sum(!is.na(data.intern.och$Vmax))
-        sum(!is.na(data.intern.rho$Vmax))
-        sum(!is.na(data.intern.tra$Vmax))
-        
-        #ALPHA
-        sum(!is.na(data.intern.chl$alpha))
-        sum(!is.na(data.intern.och$alpha))
-        sum(!is.na(data.intern.rho$alpha))
-        sum(!is.na(data.intern.tra$alpha))
-        
