@@ -2,14 +2,15 @@
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
 ## Created: Faro, 15th July 2021
-## Last modification: 16/07/2021
+## Last modification: 01/08/2021
 
 ## Carmen de los Santos & Simon Coburg
 ## email: cbsantos@ualg.pt / simon.vonsachsencoburgundgotha@imbrsea.eu
 
 ## CODE FOR
-#1 STATISTICS
-#2 LM PLOTS
+#1 DATA STRUCTURE
+#2 STATISTICS
+#3 LM PLOTS
 
 
 # SETTINGS ----------------------------------------------------------------
@@ -95,9 +96,10 @@ table(data.cat$category2)
 
 # DATA SUMMARY (data.lea) ------------------------------------------------------------
 # data structure
-table(data.lea$species_type,data.lea$nutrient, data.lea$type_uptake)
+table(data.lea$species_type, data.lea$nutrient, data.lea$type_uptake)
 
 table(data.lea$species_type,data.lea$type_uptake)
+
 table(data.lea$species_type,data.lea$species_compartm)
 
 # number of species
@@ -122,9 +124,22 @@ table(data$type_uptake,data$nutrient,data$species_phyla)
 # clean
 rm(data,species)
 
+# median, IQR
 
+# FILTER by species type
+data.seagrass <- data.lea[data.lea$species_type == "Seagrass",]
+data.algae <- data.lea[data.lea$species_type == "Algae",]
+
+summary(data.seagrass$Vmax)
+summary(data.algae$Vmax)
+
+summary(data.seagrass$alpha)
+summary(data.algae$alpha)
+
+        
 # DATA SUMMARY INORGANIC (data.lea) ------------------------------------------------------------
-#FILTER OUT inorganic nutrients
+
+# FILTER OUT inorganic nutrients
 data.organic <- data.lea[data.lea$nutrient_group=="organic",]
 nrow(data.organic)
 
@@ -157,6 +172,7 @@ table(data$type_uptake,data$nutrient,data$species_phyla)
 # clean
 rm(data,species)
 
+
 # STAT - CORRELATIONS (LEAVES/FRONDS/WHOLE ALGAE - INORGANIC NUTRIENTS) --------------------------------------------------------------
 
 # data set - important columns
@@ -167,12 +183,46 @@ rm(data,species)
 
 # correlation Vmax and alpha (species type)
 
-ggplot(data.lea,aes(x=alpha,y=Vmax,colour=species_type)) +
+g <- ggplot(data.lea,aes(x=log10(alpha),y=log10(Vmax),colour=species_type)) +
         geom_point(shape=21,alpha=0.5) +
         geom_smooth(method="lm") +
-        scale_x_log10() +
-        scale_y_log10() +
-        facet_grid(.~type_uptake)
+        #stat_cor(aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~"))) +
+        #scale_x_log10() +
+        #scale_y_log10() +
+        facet_grid(.~type_uptake) +
+        labs(x="\n(log10) Alpha [l g^-1 dw h^-1]", y="(log10) Vmax [µmol g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
+        theme_bw() +
+        theme(axis.text=element_text(size=11), axis.title.y = element_text(size=12)) +
+        theme(legend.title = element_blank()) +
+        theme(legend.position = "bottom")
+
+g
+ggsave(filename = "Linear correlation.svg", g) +
+        theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
+
+ggplot(data.lea,aes(y=log10(alpha),x=log10(Vmax), colour=species_type)) +
+        geom_point(shape=21,alpha=0.5) +
+        geom_smooth(method="lm") +
+        #stat_cor(aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~"))) +
+        #scale_x_log10() +
+        #scale_y_log10() +
+        facet_grid(.~type_uptake) +
+        labs(y="\n(log10) Alpha [l g^-1 dw h^-1]", x="(log10) Vmax [µmol g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
+        theme_bw() +
+        theme(axis.text=element_text(size=11), axis.title.y = element_text(size=12)) +
+        theme(legend.title = element_blank()) +
+        theme(legend.position = "bottom")
+
+
+ggplot(data.lea,aes(x=log10(alpha),y=log10(Vmax), colour=species_type)) +
+        geom_point(shape=21,alpha=0.5) +
+        geom_smooth(method="lm") +
+        stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+        
+
+ggplot(data.lea,aes(x=log10(alpha),y=log10(Vmax),colour=species_type)) +
+        geom_point(shape=21,alpha=0.5) +
+        geom_smooth(method="lm")
 
 ggplot(data.lea,aes(x=alpha,y=Vmax,colour=type_uptake)) +
         geom_point(shape=21,alpha=0.5) +
@@ -180,12 +230,18 @@ ggplot(data.lea,aes(x=alpha,y=Vmax,colour=type_uptake)) +
         scale_x_log10() +
         scale_y_log10()
 
+ggplot(data.lea,aes(y=Vmax,x=species_type)) +
+        geom_boxplot() +
+        geom_smooth(method="lm") +
+        scale_y_log10()
+
 ggplot(data.lea,aes(y=Vmax,x=species_type,colour=type_uptake)) +
         geom_boxplot() +
         geom_smooth(method="lm") +
         scale_y_log10()
 
-# ancova
+
+# Ancova
 mod <- lm(log10(Vmax)~log10(alpha)*species_type*type_uptake,data.lea)
 summary(mod)
 Anova(mod)
@@ -194,34 +250,92 @@ Anova(mod)
 # summary(mod)
 # Anova(mod)
 
-# correlation Vmax and alpha (species phyla)
-ggplot(data.lea,aes(y=Vmax,x=alpha,colour=species_phyla)) +
+# Correlation Vmax and alpha (species phyla)
+ggplot(data.lea,aes(y=log10(Vmax),x=log10(alpha),colour=species_phyla)) +
         geom_point(shape=21,alpha=0.5) +
         geom_smooth(method="lm") +
-        scale_x_log10() +
-        scale_y_log10()
+        stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+        # scale_x_log10() +
+        # scale_y_log10()
 
-ggplot(data.lea,aes(y=alpha,x=Vmax,colour=species_phyla)) +
-        geom_point(shape=21,alpha=0.5) +
-        geom_smooth(method="lm") +
-        scale_x_log10() +
-        scale_y_log10()
+# ggplot(data.lea,aes(y=alpha,x=Vmax,colour=species_phyla)) +
+#         geom_point(shape=21,alpha=0.5) +
+#         geom_smooth(method="lm") +
+#         scale_x_log10() +
+#         scale_y_log10()
 
 # EFFECT TEMPERATURE ------------------------------------------------------
 
-ggplot(data.lea,aes(x=temperature_experiment,y=Vmax,colour=species_type)) +
+g <- ggplot(data.lea,aes(x=temperature_experiment, y=log10(Vmax), colour=species_type)) +
         geom_point(shape=21) +
         geom_smooth(method="lm") +
-        scale_x_log10() +
-        scale_y_log10()
+        #facet_grid(.~type_uptake) +
+        stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~"))) +
+        labs(x="\nTemperature [ºC]", y="(log10) Vmax [µmol g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
+        theme_bw() +
+        theme(axis.text=element_text(size=11), axis.title.y = element_text(size=12)) +
+        theme(legend.title = element_blank()) +
+        theme(legend.position = "bottom")
 
-ggplot(data.lea,aes(x=temperature_experiment,y=alpha,colour=species_type)) +
+g
+ggsave(filename = "Linear correlation temperature Vmax.svg", g) +
+        theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
+        
+        
+
+g <- ggplot(data.lea,aes(x=temperature_experiment,y=log10(alpha),colour=species_type)) +
         geom_point(shape=21) +
         geom_smooth(method="lm") +
-        scale_x_log10() +
-        scale_y_log10()
+        #facet_grid(.~type_uptake) +
+        stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~"))) +
+        labs(x="\nTemperature [ºC]", y="(log10) Alpha [l g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
+        theme_bw() +
+        theme(axis.text=element_text(size=11), axis.title.y = element_text(size=12)) +
+        theme(legend.title = element_blank()) +
+        theme(legend.position = "bottom")
 
-mod <- lm(Vmax~temperature_experiment*species_type,data.lea)
+g
+ggsave(filename = "Linear correlation temperature alpha.svg", g) +
+        theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
+
+
+mod <- lm(log10(Vmax)~temperature_experiment*species_type,data.lea)
 summary(mod)
-mod <- lm(alpha~temperature_experiment*species_type,data.lea)
+mod <- lm(log10(Vmax)~temperature_experiment*species_type*type_uptake,data.lea)
+Anova(mod)
+
+mod <- lm(log10(alpha)~temperature_experiment*species_type*type_uptake,data.lea)
 summary(mod)
+
+
+# KRUSKALL / WILCOXON -----------------------------------------------------
+
+# # Testing for normality
+# shapiro.test(data.lea$Vmax)
+# shapiro.test(data.lea$alpha)
+
+# Adjust accordingly to Vmax or alpha
+
+# species types
+kruskal.test(species_type ~ alpha, data = data.lea)
+
+pairwise.wilcox.test(data.lea$alpha, data.lea$species_type,
+                     p.adjust.method = "BH")
+# uptake types
+kruskal.test(type_uptake ~ alpha, data = data.lea)
+
+pairwise.wilcox.test(data.lea$alpha, data.lea$type_uptake,
+                     p.adjust.method = "BH")
+
+# nutrients
+kruskal.test(nutrient ~ alpha, data = data.lea)
+
+pairwise.wilcox.test(data.lea$alpha, data.lea$nutrient,
+                     p.adjust.method = "BH")
+
+# phyla
+kruskal.test(species_phyla ~ alpha, data = data.lea)
+
+pairwise.wilcox.test(data.lea$alpha, data.lea$species_phyla,
+                     p.adjust.method = "BH")
+

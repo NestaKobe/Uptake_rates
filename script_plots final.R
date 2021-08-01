@@ -2,14 +2,15 @@
 
 ## SIMON VON SACHSEN-COBURG UND GOTHA'S MSc THESIS
 ## Created: Faro, 24th June 2021
-## Last modification: 16/07/2021
+## Last modification: 01/08/2021
 
 ## Simon Coburg
 ## email: simon.vonsachsencoburgundgotha@imbrsea.eu
 
 ## CODE FOR
 #1 DATA STRUCTURE
-#2 PLOTS
+#2 EXPLORATORY PLOTS
+#3 PLOTS VMAX & ALPHA FOR UPTAKE PHASES, NUTRIENTS & PHYLA
 
 
 # SETTINGS ----------------------------------------------------------------
@@ -231,17 +232,15 @@ rm(gdata, genv) # delete gdata
 
 # DATA DISTRIBUTION PLOTS ------------------------------------------------
 
-#Original data distribution
-#both Vmax & Alpha are highly skewed - non normal distributed residuals (see script_pre-stats.R)
+# ORIGINAL DATA DISTRIBUTION
+# both Vmax & Alpha are highly skewed - non normal distributed residuals (see script_pre-stats.R)
+# --> Log10 transformed
 
-#Log transformed
 my_comparisons <- list(c("Algae", "Seagrass"))
 
 #VMAX
 g <- ggplot(data.lea, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
         geom_boxplot(width=0.6) +
-        #stat_compare_means(label.y=3.75, label.x=1.25) +
-        #stat_compare_means(label = "p.signif", label.y=3.25, label.x = 0.965) +
         stat_compare_means(comparisons=my_comparisons) +
         scale_y_continuous(limits = c(-3.5, 3.5)) +
         labs(x="", y="(log10) Vmax [µmol g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
@@ -249,8 +248,6 @@ g <- ggplot(data.lea, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
         theme(axis.text=element_text(size=12), axis.title.y = element_text(size=13)) +
         theme(legend.title = element_blank()) +
         theme(legend.position = "")
-        #geom_text(x=1.3, y= -4.2, label="n = ", size=3.7) + #Algae alpha values
-        #geom_text(x=2.3, y= -4.2, label="n = 220", size=3.7)  #Seagrass alpha values
 
 g
 ggsave(filename = "Vmax inorganic.svg", g) +
@@ -259,8 +256,7 @@ ggsave(filename = "Vmax inorganic.svg", g) +
 #ALPHA
 g <- ggplot(data.lea, aes(x=species_type, y=log10(alpha), fill=species_type)) +
         geom_boxplot(width=0.6) +
-        #stat_compare_means(label.y=4, label.x=1.25) +
-        #stat_compare_means(label = "p.signif", label.y = 2.8, label.x = 0.965) +
+        stat_compare_means() +
         stat_compare_means(comparisons = my_comparisons) +
         scale_y_continuous(limits = c(-3.5, 3.5)) +
         labs(x="", y="(log10) Alpha [l g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
@@ -268,8 +264,6 @@ g <- ggplot(data.lea, aes(x=species_type, y=log10(alpha), fill=species_type)) +
         theme(axis.text=element_text(size=12), axis.title.y = element_text(size=13)) +
         theme(legend.title = element_blank()) +
         theme(legend.position = "")
-        #geom_text(x=1.3, y= -4.2, label="n = 801", size=3.7) + #Algae alpha values
-        #geom_text(x=2.3, y= -4.2, label="n = 226", size=3.7)  #Seagrass alpha values
 
 g
 ggsave(filename = "Alpha inorganic.svg", g) +
@@ -278,14 +272,15 @@ ggsave(filename = "Alpha inorganic.svg", g) +
 
 #---#
 
-# by uptake types
+# BY UPTAKE TYPES
+
 #my_comparisons <- list(c("Algae", "Seagrass"))
+#my_comparisons <- list(c("Int. contr. phase", "Surge"))
 
 #VMAX
 g <- ggplot(data.lea, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
         geom_boxplot(width=0.6) +
-        #stat_compare_means(size=3.5, label.y = 3.5) +
-        #stat_compare_means(label = "p.signif", label.y = 3, label.x = 0.95, hide.ns = TRUE) +
+        stat_compare_means() +
         stat_compare_means(comparisons=my_comparisons) +
         facet_grid(.~type_uptake) +
         scale_y_continuous(limits = c(-4, 4)) +
@@ -296,7 +291,7 @@ g <- ggplot(data.lea, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
         theme(legend.position = "")
 
 g
-ggsave(filename = "Vmax inorg. uptake type.svg", g) +
+ggsave(filename = "Vmax inorganic uptake type.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 #ALPHA
@@ -310,19 +305,18 @@ g <- ggplot(data.lea, aes(x=species_type, y=log10(alpha), fill=species_type)) +
         theme(axis.text=element_text(size=12), axis.title.y = element_text(size=13)) +
         theme(legend.title = element_blank()) +
         theme(legend.position = "")
-        #geom_text(x=0.5, y= -4.2, label="n = 361", size=3) + #Surge algae values
-        #geom_text(x=2.3, y= -4.2, label="n = 130", size=3)  #Surge seagrass  values
 
 g
-ggsave(filename = "Alpha inorg. uptake type.svg", g) +
+ggsave(filename = "Alpha inorgorganic uptake type.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 #---#
 
-#by nutrients
+# BY NUTRIENTS
+
 #my_comparisons <- list(c("Algae", "Seagrass"))
 
-#INORGANIC
+# Inorganic
 #VMAX
 g <- ggplot(data.lea, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
         geom_boxplot(width=0.6) +
@@ -340,7 +334,7 @@ g <- ggplot(data.lea, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
               axis.text.x = element_blank())
 
 g
-ggsave(filename = "Vmax inorg. nutrients.svg", g) +
+ggsave(filename = "Vmax inorganic nutrients.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 #ALPHA
@@ -360,17 +354,15 @@ g <- ggplot(data.lea, aes(x=species_type, y=log10(alpha), fill=species_type)) +
               axis.text.x = element_blank())
 
 g
-ggsave(filename = "Alpha inorg. nutrients.svg", g) +
+ggsave(filename = "Alpha inorganic nutrients.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 
-#ORGANIC
+# Organic
 #VMAX
 g <- ggplot(data.lea.org, aes(x=species_type, y=log10(Vmax), fill=species_type)) +
         geom_boxplot(width=0.6) +
-        #stat_compare_means(label.y = 3.5, size=2.1) +
         stat_compare_means(comparisons = my_comparisons, size=2.5) +
-        #stat_compare_means(label = "p.signif", label.y = 3, label.x = 0.925, size=2.5, hide.ns = TRUE) +
         facet_grid(type_uptake~nutrient) +
         scale_y_continuous(limits = c(-4, 4)) +
         labs(x="", y="(log10) Vmax [µmol g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
@@ -382,14 +374,12 @@ g <- ggplot(data.lea.org, aes(x=species_type, y=log10(Vmax), fill=species_type))
               axis.text.x = element_blank())
 
 g
-ggsave(filename = "Vmax org. nutrients.svg", g) +
+ggsave(filename = "Vmax organic nutrients.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 #ALPHA
 g <- ggplot(data.lea.org, aes(x=species_type, y=log10(alpha), fill=species_type)) +
         geom_boxplot(width=0.6) +
-        #stat_compare_means(label.y = 2.6, size=2.1) +
-        #stat_compare_means(label = "p.signif", label.y = 2, label.x = 0.89, size=2.5, hide.ns = TRUE) +
         facet_grid(type_uptake~nutrient) +
         stat_compare_means(comparisons = my_comparisons, size=2.5) +
         scale_y_continuous(limits = c(-4, 4)) +
@@ -402,32 +392,29 @@ g <- ggplot(data.lea.org, aes(x=species_type, y=log10(alpha), fill=species_type)
               axis.text.x = element_blank())
 
 g
-ggsave(filename = "Alpha org. nutrients.svg", g) +
+ggsave(filename = "Alpha organic nutrients.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 #---#
 
 
-# by phyla ----------------------------------------------------------------
+# BY PHYLA
 
-my_comparisons <- list(c("Chlorophyta", "Ochrophyta"), c("Chlorophyta", "Rhodophyta"), c("Chlorophyta", "Tracheophyta"),
-                                      c("Ochrophyta", "Rhodophyta"), c("Ochrophyta", "Tracheophyta"), c("Rhodophyta", "Tracheophyta"))
 #Created in order to compare between groups with command stat_compare_means(comparisons=) within facet_grid
+my_comparisons <- list(c("Chlorophyta", "Ochrophyta"), c("Chlorophyta", "Rhodophyta"), c("Chlorophyta", "Tracheophyta"),
+                                      c("Ochrophyta", "Rhodophyta"), c("Ochrophyta", "Tracheophyta"), c("Rhodophyta", "Tracheophyta")) 
 
-        #Check colourblindfriendly colours for phyla (green, brown & red algae)
-        #library(RColorBrewer)
-        #display.brewer.all(colorblindFriendly = T)
-        #display.brewer.pal(n=12, name= "RdBu")
-        #brewer.pal(n=11, name= "RdBu")
+#Check colourblindfriendly colours for phyla (green, brown & red algae)
+#library(RColorBrewer)
+#display.brewer.all(colorblindFriendly = T)
+#display.brewer.pal(n=12, name= "RdBu")
+#brewer.pal(n=11, name= "RdBu")
 
 #VMAX
 g <- ggplot(data.lea, aes(x=species_phyla, y=log10(Vmax), fill=species_phyla)) +
         scale_fill_manual(values = c("#A1D99B", "#B35806", "#D6604D", "#44AA99")) +
         geom_boxplot(width=0.5) +
         facet_grid(type_uptake~.) +
-        #stat_compare_means(label.y= 3.8, size=3.5) +
-        #stat_compare_means(label = "p.signif", ref.group = ".all.", label.y=3, hide.ns = TRUE) +
         stat_compare_means(comparisons = my_comparisons, size=2.8) +
-        #stat_compare_means(label = "p.signif", label.y = 10, label.x = 0.89, size=2.5, hide.ns = TRUE) +
         scale_y_continuous(limits = c(-4, 7.5)) +
         labs(x="\nPhyla", y="(log10) Vmax [µmol g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
         theme_bw() +
@@ -436,7 +423,7 @@ g <- ggplot(data.lea, aes(x=species_phyla, y=log10(Vmax), fill=species_phyla)) +
         theme(legend.position = "")
 
 g
-ggsave(filename = "Vmax inorg. phyla.svg", g) +
+ggsave(filename = "Vmax inorganic phyla.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
 
@@ -445,8 +432,6 @@ g <- ggplot(data.lea, aes(x=species_phyla, y=log10(alpha), fill=species_phyla)) 
         scale_fill_manual(values = c("#A1D99B", "#B35806", "#D6604D", "#44AA99")) +
         geom_boxplot(width=0.5) +
         facet_grid(type_uptake~.) +
-        #stat_compare_means(label.y=3.9, size=3.5) +
-        #stat_compare_means(label = "p.signif", ref.group = ".all.", label.y=2, hide.ns = TRUE) +
         stat_compare_means(comparisons = my_comparisons, size=2.8) +
         scale_y_continuous(limits = c(-4, 7.5)) +
         labs(x="\nPhyla", y="(log10) Alpha [l g^-1 dw h^-1]\n") + #adding [\n] to axis label to increase gap
@@ -456,6 +441,6 @@ g <- ggplot(data.lea, aes(x=species_phyla, y=log10(alpha), fill=species_phyla)) 
         theme(legend.position = "")
         
 g
-ggsave(filename = "Alpha inorg. phyla.svg", g) +
+ggsave(filename = "Alpha inorganic phyla.svg", g) +
         theme(plot.title = element_text(hjust = 0.5), dpi = 600, limitsize = TRUE)
 
